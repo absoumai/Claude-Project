@@ -1,23 +1,21 @@
-// PenNotes API — the page itself lives in Supabase Storage (web/index.html),
-// because the functions gateway rewrites every response to text/plain and adds
-// "content-security-policy: default-src 'none'; sandbox", so it cannot serve HTML.
-// GET  -> redirect to the app
-// POST -> {mode, image(base64 png), question, text} -> Claude -> {text}
+// PenNotes API. The page is hosted on GitHub Pages (absoumai/pennotes) because
+// Supabase sandboxes ALL HTML on its domain: functions and storage both force
+// text/plain + "content-security-policy: default-src 'none'; sandbox".
+// GET  -> tiny status JSON
+// POST -> {mode, image(base64 png), question, text, extra} -> Claude -> {text}
 // Secrets: Supabase env vars ANTHROPIC_API_KEY / PENNOTES_PASSCODE win if set,
 // otherwise ./secrets.ts is used. secrets.ts is gitignored — see secrets.example.ts.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { API_KEY, PASSCODE } from "./secrets.ts";
 
-const APP_URL =
-  "https://bydhtjspcdjdgrpjsotr.supabase.co/storage/v1/object/public/pennotes/index.html";
+const MODEL = "claude-sonnet-5";
 
 const CORS: Record<string, string> = {
   "access-control-allow-origin": "*",
   "access-control-allow-headers": "content-type, x-pass, apikey, authorization",
   "access-control-allow-methods": "POST, GET, OPTIONS",
+  "access-control-max-age": "86400",
 };
-
-const MODEL = "claude-sonnet-5";
 
 const PROMPTS: Record<string, string> = {
   read:
@@ -29,11 +27,30 @@ const PROMPTS: Record<string, string> = {
     "Max 3 short lines per idea: what it is (plain English + an analogy), why it matters, one example. " +
     "No walls of text.",
   summary:
-    "Read the handwritten note. Give the 5 key points as short bullets, then one line: 'The exam answer is: ...'.",
+    "Read the handwritten note. Give the 5 key points as short bullets, then one line starting 'The exam answer is:'.",
   quiz:
-    "Read the handwritten note. Write 5 exam-style questions on it, numbered, no answers yet. " +
+    "Read the handwritten note. Write 5 exam-style questions on it, numbered 1. to 5., no answers yet. " +
     "Then on its own line write exactly: --ANSWERS-- " +
     "then the numbered answers, each with a one-line reason.",
+  mcq:
+    "Read the handwritten note. Write 5 multiple choice questions about it.\n" +
+    "Format EXACTLY like this, nothing else:\n" +
+    "1. question text\n" +
+    "A) option\nB) option\nC) option\nD) option\n" +
+    "(repeat for 2 to 5, numbered)\n" +
+    "then a line containing exactly: --ANSWERS--\n" +
+    "then one line per question: 1) B - short reason\n" +
+    "Keep every option under 8 words. Exactly one option is correct.",
+  mark:
+    "You are marking a student's handwritten answers. The image is their note: it contains the " +
+    "material AND their answers, which may be written anywhere, in any order, in short forms like " +
+    "'1-5', 'Q2 H', '3. plural', or just '4 B'. Match each answer to its question number.\n" +
+    "Output ONE line per question, in number order, in EXACTLY this pipe format:\n" +
+    "number | RIGHT or WRONG or BLANK | what the student wrote | short comment\n" +
+    "Use BLANK when you cannot find an answer for that question. Keep the comment under 12 words; " +
+    "for a WRONG answer the comment must give the correct answer.\n" +
+    "Then a final line exactly like: SCORE: 3/5\n" +
+    "Output nothing else — no preamble, no markdown.",
   cards:
     "Read the handwritten note. Make flashcards. Format each as 'Q: ...' on one line and 'A: ...' on the next. " +
     "8 cards max, shortest possible wording.",
@@ -42,7 +59,7 @@ const PROMPTS: Record<string, string> = {
     "final answer in bold at the end. If the note already has an attempt, follow the same method.",
   fix:
     "Read the handwritten work. Mark it: list what is correct (short), then each mistake as " +
-    "'Line/step X: what's wrong -> the fix'. End with a mark out of 10 and one thing to practise.",
+    "'Line X: what is wrong -> the fix'. End with a mark out of 10 and one thing to practise.",
   ask:
     "Read the handwritten note, then answer the student's question about it. Short, plain English, " +
     "3 lines unless they asked for detail.",
@@ -57,9 +74,7 @@ function json(body: unknown, status = 200) {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
-  if (req.method === "GET") {
-    return new Response(null, { status: 302, headers: { location: APP_URL, ...CORS } });
-  }
+  if (req.method === "GET") return json({ ok: true, service: "pennotes-api" });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   const passcode = Deno.env.get("PENNOTES_PASSCODE") || PASSCODE;
@@ -70,7 +85,13 @@ Deno.serve(async (req: Request) => {
   const key = Deno.env.get("ANTHROPIC_API_KEY") || API_KEY;
   if (!key) return json({ error: "Server missing ANTHROPIC_API_KEY." }, 500);
 
-  let body: { mode?: string; image?: string; question?: string; text?: string };
+  let body: {
+    mode?: string;
+    image?: string;
+    question?: string;
+    text?: string;
+    extra?: string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -88,6 +109,7 @@ Deno.serve(async (req: Request) => {
   }
   let ask = PROMPTS[mode];
   if (mode === "ask" && body.question) ask += "\n\nStudent's question: " + body.question;
+  if (mode === "mark" && body.extra) ask += "\n\nThe questions and the correct answers:\n" + body.extra;
   if (!body.image && body.text) ask += "\n\nThe note (typed): " + body.text;
   content.push({ type: "text", text: ask });
 
@@ -101,7 +123,7 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: mode === "read" ? 1000 : 1600,
+        max_tokens: mode === "read" ? 1000 : 1800,
         messages: [{ role: "user", content }],
       }),
     });

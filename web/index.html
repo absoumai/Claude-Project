@@ -11,7 +11,7 @@
 <style>
   :root{
     --navy:#0A0F1E; --panel:#111A31; --line:#22304f;
-    --cyan:#00FFFF; --violet:#8b5cf6; --red:#ff3366;
+    --cyan:#00FFFF; --violet:#8b5cf6; --green:#00ff88; --red:#ff3366;
     --paper:#fbf9f2; --rule:#dfe7f1; --muted:#93a4c4;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
@@ -23,26 +23,39 @@
     padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom)}
 
   .top{display:flex; align-items:center; gap:8px; padding:8px 12px;
-    border-bottom:1px solid var(--line); background:var(--panel); flex:0 0 auto}
-  .brand{font-weight:800; letter-spacing:.4px; font-size:15px; color:var(--cyan); margin-right:4px}
+    border-bottom:1px solid var(--line); background:var(--panel); flex:0 0 auto; overflow-x:auto}
+  .brand{font-weight:800; letter-spacing:.4px; font-size:15px; color:var(--cyan); margin-right:2px}
   .spacer{flex:1}
   .btn{appearance:none; border:1px solid var(--line); background:#16203c; color:#eaf2ff;
     border-radius:12px; padding:10px 14px; font-size:15px; font-weight:600; min-height:44px;
-    display:inline-flex; align-items:center; gap:6px; cursor:pointer}
+    display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;
+    flex:0 0 auto; white-space:nowrap}
   .btn:active{transform:scale(.97)}
   .btn.on{background:var(--cyan); color:#04121b; border-color:var(--cyan)}
   .btn.ghost{background:transparent}
   .btn.sm{padding:8px 10px; font-size:14px; min-height:38px}
-  .swatch{width:30px; height:30px; border-radius:50%; border:2px solid #2c3b5e; padding:0}
+  .swatch{width:30px; height:30px; border-radius:50%; border:2px solid #2c3b5e; padding:0; flex:0 0 auto}
   .swatch.on{border-color:#fff; box-shadow:0 0 0 2px var(--cyan)}
+
+  .mid{flex:1 1 auto; display:flex; min-height:0}
+
+  /* shapes rail */
+  .rail{flex:0 0 auto; width:74px; background:var(--panel); border-right:1px solid var(--line);
+    display:flex; flex-direction:column; gap:6px; padding:8px 6px; overflow-y:auto}
+  .rail.hide{display:none}
+  .rail .btn{width:100%; padding:8px 4px; font-size:11px; min-height:52px; flex-direction:column; gap:2px}
+  .rail svg{width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round}
+  .railhead{font-size:10px; letter-spacing:.8px; color:var(--muted); text-align:center; margin:2px 0}
 
   .scroll{flex:1 1 auto; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch;
     background:#070c17; padding:10px}
   .padwrap{position:relative; margin:0 auto; max-width:1100px; border-radius:14px; overflow:hidden;
     box-shadow:0 10px 30px rgba(0,0,0,.45)}
-  canvas#pad{display:block; width:100%; touch-action:pan-y;
-    background-color:var(--paper);
-    background-image:repeating-linear-gradient(to bottom, transparent 0 43px, var(--rule) 43px 44px);}
+  canvas#pad{display:block; width:100%; touch-action:pan-y; background-color:var(--paper);
+    background-image:repeating-linear-gradient(to bottom, transparent 0 43px, var(--rule) 43px 44px)}
+  canvas#pad.grid{background-image:
+    repeating-linear-gradient(to bottom, transparent 0 27px, var(--rule) 27px 28px),
+    repeating-linear-gradient(to right, transparent 0 27px, var(--rule) 27px 28px)}
   .hint{position:absolute; left:18px; top:14px; color:#9fb0c9; font-size:17px; pointer-events:none}
 
   .bottom{flex:0 0 auto; background:var(--panel); border-top:1px solid var(--line)}
@@ -53,18 +66,18 @@
   #readtext{flex:1; font-size:14px; line-height:1.4; color:#cfe0ff; max-height:56px; overflow:auto;
     white-space:pre-wrap; -webkit-user-select:text; user-select:text}
   .actions{display:flex; gap:8px; padding:10px 12px; overflow-x:auto}
-  .actions .btn{flex:0 0 auto}
   .qbox{display:flex; gap:8px; padding:0 12px 10px}
   .qbox input{flex:1; background:#0d1730; border:1px solid var(--line); color:#eaf2ff;
     border-radius:12px; padding:12px 14px; font-size:16px; min-height:44px;
     -webkit-user-select:text; user-select:text}
+  #markbtn{background:var(--violet); border-color:var(--violet); color:#fff; display:none}
 
-  .sheet{position:fixed; inset:auto 0 0 0; max-height:82%; background:var(--panel);
+  .sheet{position:fixed; inset:auto 0 0 0; max-height:86%; background:var(--panel);
     border-top:2px solid var(--cyan); border-radius:18px 18px 0 0; transform:translateY(110%);
     transition:transform .25s ease; z-index:40; display:flex; flex-direction:column;
     padding-bottom:env(safe-area-inset-bottom)}
   .sheet.open{transform:translateY(0)}
-  .shead{display:flex; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid var(--line)}
+  .shead{display:flex; align-items:center; gap:8px; padding:12px 14px; border-bottom:1px solid var(--line)}
   .shead b{font-size:16px}
   .sbody{padding:14px 16px 20px; overflow:auto; font-size:17px; line-height:1.55;
     -webkit-user-select:text; user-select:text}
@@ -79,6 +92,28 @@
     vertical-align:middle; margin-right:8px}
   @keyframes sp{to{transform:rotate(360deg)}}
   .err{color:var(--red)}
+
+  /* multi choice */
+  .mcq{border:1px solid var(--line); border-radius:14px; padding:12px; margin:0 0 12px}
+  .mcq .qt{font-weight:700; margin-bottom:8px}
+  .opt{display:flex; align-items:center; gap:10px; width:100%; text-align:left; margin:0 0 6px;
+    background:#0d1730; border:1px solid var(--line); color:#eaf2ff; border-radius:10px;
+    padding:10px 12px; font-size:16px; min-height:44px; cursor:pointer}
+  .opt b{flex:0 0 auto; width:22px; color:var(--cyan)}
+  .opt.pick{border-color:var(--cyan); background:#123}
+  .opt.right{border-color:var(--green); background:rgba(0,255,136,.12)}
+  .opt.wrong{border-color:var(--red); background:rgba(255,51,102,.12)}
+
+  /* marking */
+  .mk{display:flex; gap:10px; padding:10px 0; border-bottom:1px solid var(--line)}
+  .mk .ic{flex:0 0 auto; width:26px; height:26px; border-radius:50%; display:flex;
+    align-items:center; justify-content:center; font-weight:800; font-size:15px}
+  .mk.ok .ic{background:rgba(0,255,136,.15); color:var(--green); border:1px solid var(--green)}
+  .mk.no .ic{background:rgba(255,51,102,.15); color:var(--red); border:1px solid var(--red)}
+  .mk.blank .ic{background:#2c3b5e; color:var(--muted); border:1px solid var(--line)}
+  .mk div{flex:1; min-width:0}
+  .mk small{display:block; color:var(--muted); font-size:13px; margin-top:2px}
+  .score{font-size:20px; font-weight:800; color:var(--cyan); padding:12px 0 4px}
 
   .drawer{position:fixed; inset:0 auto 0 0; width:min(85%,340px); background:var(--panel);
     border-right:1px solid var(--line); transform:translateX(-105%); transition:transform .25s ease;
@@ -96,6 +131,12 @@
     color:var(--cyan); border:1px solid var(--cyan); padding:10px 16px; border-radius:12px;
     font-size:14px; z-index:60; opacity:0; transition:opacity .2s; pointer-events:none}
   .toast.on{opacity:1}
+  .menu{position:fixed; right:12px; top:60px; background:var(--panel); border:1px solid var(--line);
+    border-radius:14px; padding:6px; z-index:55; display:none; min-width:210px}
+  .menu.on{display:block}
+  .menu button{display:block; width:100%; text-align:left; background:none; border:0; color:#eaf2ff;
+    padding:12px 14px; font-size:15px; border-radius:10px; cursor:pointer}
+  .menu button:active{background:#16203c}
 </style>
 </head>
 <body>
@@ -105,8 +146,9 @@
     <button class="btn sm ghost" id="menu">&#9776;</button>
     <span class="brand">PenNotes</span>
     <button class="btn sm" id="tPen">Pen</button>
-    <button class="btn sm" id="tHi">Mark</button>
+    <button class="btn sm" id="tHi">Hilite</button>
     <button class="btn sm" id="tEr">Erase</button>
+    <button class="btn sm ghost" id="railBtn">Shapes</button>
     <button class="swatch" data-c="#0d1b2a" style="background:#0d1b2a"></button>
     <button class="swatch" data-c="#1f6feb" style="background:#1f6feb"></button>
     <button class="swatch" data-c="#d92b2b" style="background:#d92b2b"></button>
@@ -114,12 +156,27 @@
     <button class="btn sm ghost" id="undo">Undo</button>
     <button class="btn sm ghost" id="finger">Pen only</button>
     <button class="btn sm ghost" id="newnote">New</button>
+    <button class="btn sm" id="exportBtn">Export</button>
   </div>
 
-  <div class="scroll" id="scroll">
-    <div class="padwrap">
-      <canvas id="pad"></canvas>
-      <div class="hint" id="hint">Write here with your Apple Pencil...</div>
+  <div class="mid">
+    <div class="rail hide" id="rail">
+      <div class="railhead">SHAPES</div>
+      <button class="btn" data-shape="line"><svg viewBox="0 0 24 24"><path d="M4 20 L20 4"/></svg>Line</button>
+      <button class="btn" data-shape="arrow"><svg viewBox="0 0 24 24"><path d="M4 20 L20 4"/><path d="M20 4 L13 5"/><path d="M20 4 L19 11"/></svg>Arrow</button>
+      <button class="btn" data-shape="rect"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12"/></svg>Box</button>
+      <button class="btn" data-shape="circle"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>Circle</button>
+      <button class="btn" data-shape="tri"><svg viewBox="0 0 24 24"><path d="M12 5 L20 19 L4 19 Z"/></svg>Triangle</button>
+      <button class="btn" data-shape="axes"><svg viewBox="0 0 24 24"><path d="M4 20 L4 4"/><path d="M4 20 L20 20"/></svg>Axes</button>
+      <div class="railhead">PAPER</div>
+      <button class="btn" id="gridBtn"><svg viewBox="0 0 24 24"><path d="M4 10h16M4 16h16M10 4v16M16 4v16"/></svg>Grid</button>
+    </div>
+
+    <div class="scroll" id="scroll">
+      <div class="padwrap">
+        <canvas id="pad"></canvas>
+        <div class="hint" id="hint">Write here with your Apple Pencil...</div>
+      </div>
     </div>
   </div>
 
@@ -129,8 +186,10 @@
       <div id="readtext">Your handwriting appears here a moment after you stop writing.</div>
     </div>
     <div class="actions">
+      <button class="btn" id="markbtn">Mark my answers</button>
       <button class="btn" data-mode="explain">Explain simple</button>
       <button class="btn" data-mode="quiz">Quiz me</button>
+      <button class="btn" data-mode="mcq">Multi-choice</button>
       <button class="btn" data-mode="summary">Summarise</button>
       <button class="btn" data-mode="cards">Flashcards</button>
       <button class="btn" data-mode="solve">Solve step by step</button>
@@ -147,10 +206,17 @@
   <div class="shead">
     <b id="stitle">Claude</b>
     <span class="spacer"></span>
+    <button class="btn sm ghost" id="checkmcq" style="display:none">Check answers</button>
     <button class="btn sm ghost" id="showans" style="display:none">Show answers</button>
     <button class="btn sm ghost" id="closesheet">Close</button>
   </div>
   <div class="sbody" id="sbody"></div>
+</div>
+
+<div class="menu" id="expmenu">
+  <button data-exp="sheet">Study sheet (PDF)</button>
+  <button data-exp="slides">Slide deck (PDF)</button>
+  <button data-exp="png">Save the page as an image</button>
 </div>
 
 <div class="drawer" id="drawer">
@@ -166,7 +232,7 @@
 
 <script>
 (function(){
-  var NL = String.fromCharCode(10);
+  var API = 'https://bydhtjspcdjdgrpjsotr.supabase.co/functions/v1/pennotes';
   var $ = function(id){ return document.getElementById(id); };
   var C = $('pad'), X = C.getContext('2d');
   var DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
@@ -176,8 +242,13 @@
   var tool = 'pen', color = '#0d1b2a', penOnly = true;
   var recognized = '', lastSentCount = -1, readTimer = null, busy = false;
   var answersPart = '';
+  var quiz = null;          // { questions:[..], key:'..' }  set by Quiz me
+  var mcq = null;           // { items:[{q, opts:[], correct, why}], picks:{} }
+  var sessionLog = [];      // everything Claude produced this session, for export
 
-  /* ---------- canvas ---------- */
+  var SHAPES = { line:1, arrow:1, rect:1, circle:1, tri:1, axes:1 };
+
+  /* ================= canvas ================= */
   function fit(){
     var w = C.parentElement.clientWidth;
     C.style.height = PAGE_H + 'px';
@@ -186,13 +257,49 @@
     X.setTransform(DPR, 0, 0, DPR, 0, 0);
     redraw();
   }
+
+  function drawShape(s){
+    var x0 = s.x0, y0 = s.y0, x1 = s.x1, y1 = s.y1;
+    X.beginPath();
+    if(s.tool === 'line' || s.tool === 'arrow'){
+      X.moveTo(x0, y0); X.lineTo(x1, y1); X.stroke();
+      if(s.tool === 'arrow'){
+        var a = Math.atan2(y1 - y0, x1 - x0), h = 16;
+        X.beginPath();
+        X.moveTo(x1, y1);
+        X.lineTo(x1 - h * Math.cos(a - 0.4), y1 - h * Math.sin(a - 0.4));
+        X.moveTo(x1, y1);
+        X.lineTo(x1 - h * Math.cos(a + 0.4), y1 - h * Math.sin(a + 0.4));
+        X.stroke();
+      }
+    } else if(s.tool === 'rect'){
+      X.rect(Math.min(x0,x1), Math.min(y0,y1), Math.abs(x1-x0), Math.abs(y1-y0));
+      X.stroke();
+    } else if(s.tool === 'circle'){
+      var cx = (x0+x1)/2, cy = (y0+y1)/2;
+      X.ellipse(cx, cy, Math.abs(x1-x0)/2, Math.abs(y1-y0)/2, 0, 0, 6.3);
+      X.stroke();
+    } else if(s.tool === 'tri'){
+      X.moveTo((x0+x1)/2, y0); X.lineTo(x1, y1); X.lineTo(x0, y1); X.closePath(); X.stroke();
+    } else if(s.tool === 'axes'){
+      X.moveTo(x0, y0); X.lineTo(x0, y1); X.lineTo(x1, y1); X.stroke();
+      X.beginPath();
+      X.moveTo(x0, y0); X.lineTo(x0 - 6, y0 + 12); X.moveTo(x0, y0); X.lineTo(x0 + 6, y0 + 12);
+      X.moveTo(x1, y1); X.lineTo(x1 - 12, y1 - 6); X.moveTo(x1, y1); X.lineTo(x1 - 12, y1 + 6);
+      X.stroke();
+    }
+  }
+
   function drawStroke(s){
-    var p = s.pts; if(!p.length) return;
     X.save();
     X.lineCap = 'round'; X.lineJoin = 'round';
     if(s.tool === 'erase'){ X.globalCompositeOperation = 'destination-out'; X.strokeStyle = 'rgba(0,0,0,1)'; }
     else if(s.tool === 'hi'){ X.globalCompositeOperation = 'multiply'; X.strokeStyle = 'rgba(255,214,0,.42)'; }
     else { X.globalCompositeOperation = 'source-over'; X.strokeStyle = s.color; }
+
+    if(SHAPES[s.tool]){ X.lineWidth = s.w; drawShape(s); X.restore(); return; }
+
+    var p = s.pts; if(!p || !p.length){ X.restore(); return; }
     if(p.length === 1){
       X.beginPath(); X.arc(p[0].x, p[0].y, s.w * (p[0].p || .5), 0, 6.3);
       X.fillStyle = X.strokeStyle; X.fill(); X.restore(); return;
@@ -205,13 +312,20 @@
     }
     X.restore();
   }
+
   function redraw(){
     X.setTransform(1,0,0,1,0,0); X.clearRect(0,0,C.width,C.height);
     X.setTransform(DPR,0,0,DPR,0,0);
     for(var i=0;i<strokes.length;i++) drawStroke(strokes[i]);
     $('hint').style.display = strokes.length ? 'none' : 'block';
   }
-  function widthFor(){ return tool === 'erase' ? 26 : (tool === 'hi' ? 20 : 2.6); }
+
+  function widthFor(){
+    if(tool === 'erase') return 26;
+    if(tool === 'hi') return 20;
+    if(SHAPES[tool]) return 2.4;
+    return 2.6;
+  }
   function pos(e){
     var r = C.getBoundingClientRect();
     return { x:(e.clientX - r.left), y:(e.clientY - r.top),
@@ -221,17 +335,23 @@
     if(e.pointerType === 'pen' || e.pointerType === 'mouse') return true;
     return !penOnly;
   }
+
   C.addEventListener('pointerdown', function(e){
     if(!accepts(e)) return;
     e.preventDefault(); C.setPointerCapture(e.pointerId);
-    cur = { pts:[pos(e)], color:color, w:widthFor(), tool:tool };
-    strokes.push(cur); drawStroke(cur);
+    var p = pos(e);
+    if(SHAPES[tool]) cur = { tool:tool, color:color, w:widthFor(), x0:p.x, y0:p.y, x1:p.x, y1:p.y };
+    else cur = { tool:tool, color:color, w:widthFor(), pts:[p] };
+    strokes.push(cur); redraw();
   });
   C.addEventListener('pointermove', function(e){
     if(!cur || !accepts(e)) return;
     e.preventDefault();
-    var pts = (e.getCoalescedEvents ? e.getCoalescedEvents() : [e]);
-    for(var i=0;i<pts.length;i++) cur.pts.push(pos(pts[i]));
+    if(SHAPES[cur.tool]){ var p = pos(e); cur.x1 = p.x; cur.y1 = p.y; }
+    else {
+      var pts = (e.getCoalescedEvents ? e.getCoalescedEvents() : [e]);
+      for(var i=0;i<pts.length;i++) cur.pts.push(pos(pts[i]));
+    }
     redraw();
   });
   function endStroke(){ if(!cur) return; cur = null; scheduleRead(); }
@@ -240,25 +360,33 @@
   C.addEventListener('pointerleave', endStroke);
   window.addEventListener('resize', fit);
 
-  /* ---------- export only the written area ---------- */
-  function exportPNG(){
-    if(!strokes.length) return null;
-    var minx=1e9, miny=1e9, maxx=-1e9, maxy=-1e9, seen=false;
-    for(var i=0;i<strokes.length;i++){
-      if(strokes[i].tool === 'erase') continue;
-      var p = strokes[i].pts;
-      for(var j=0;j<p.length;j++){
+  /* ============ export the written area as PNG ============ */
+  function bounds(){
+    var minx=1e9, miny=1e9, maxx=-1e9, maxy=-1e9, seen=false, i, j;
+    for(i=0;i<strokes.length;i++){
+      var s = strokes[i];
+      if(s.tool === 'erase') continue;
+      if(SHAPES[s.tool]){
         seen = true;
-        if(p[j].x<minx) minx=p[j].x;
-        if(p[j].x>maxx) maxx=p[j].x;
-        if(p[j].y<miny) miny=p[j].y;
-        if(p[j].y>maxy) maxy=p[j].y;
+        minx = Math.min(minx, s.x0, s.x1); maxx = Math.max(maxx, s.x0, s.x1);
+        miny = Math.min(miny, s.y0, s.y1); maxy = Math.max(maxy, s.y0, s.y1);
+      } else if(s.pts){
+        for(j=0;j<s.pts.length;j++){
+          seen = true;
+          var p = s.pts[j];
+          if(p.x<minx) minx=p.x; if(p.x>maxx) maxx=p.x;
+          if(p.y<miny) miny=p.y; if(p.y>maxy) maxy=p.y;
+        }
       }
     }
-    if(!seen) return null;
+    return seen ? {minx:minx, miny:miny, maxx:maxx, maxy:maxy} : null;
+  }
+
+  function exportCanvas(){
+    var b = bounds(); if(!b) return null;
     var pad = 26, cssW = C.width / DPR;
-    minx = Math.max(0, minx - pad); miny = Math.max(0, miny - pad);
-    maxx = Math.min(cssW, maxx + pad); maxy = Math.min(PAGE_H, maxy + pad);
+    var minx = Math.max(0, b.minx - pad), miny = Math.max(0, b.miny - pad);
+    var maxx = Math.min(cssW, b.maxx + pad), maxy = Math.min(PAGE_H, b.maxy + pad);
     var w = Math.max(8, maxx - minx), h = Math.max(8, maxy - miny);
     var scale = Math.min(2, Math.max(1, 1400 / w));
     var o = document.createElement('canvas');
@@ -266,10 +394,14 @@
     var ox = o.getContext('2d');
     ox.fillStyle = '#ffffff'; ox.fillRect(0, 0, o.width, o.height);
     ox.drawImage(C, minx*DPR, miny*DPR, w*DPR, h*DPR, 0, 0, o.width, o.height);
-    return o.toDataURL('image/png').split(',')[1];
+    return o;
+  }
+  function exportPNG(){
+    var o = exportCanvas();
+    return o ? o.toDataURL('image/png').split(',')[1] : null;
   }
 
-  /* ---------- talk to Claude ---------- */
+  /* ================= API ================= */
   function pass(){
     var p = localStorage.getItem('pn_pass');
     if(!p){
@@ -278,14 +410,14 @@
     }
     return p;
   }
-  var API = 'https://bydhtjspcdjdgrpjsotr.supabase.co/functions/v1/pennotes';
-  function call(mode, question, cb){
+  function call(mode, question, extra, cb){
     var img = exportPNG();
     if(!img){ cb({ error:'Write something on the page first.' }); return; }
     fetch(API, {
       method:'POST',
       headers:{ 'content-type':'application/json', 'x-pass':pass() },
-      body:JSON.stringify({ mode:mode, image:img, question:question||'', text:recognized })
+      body:JSON.stringify({ mode:mode, image:img, question:question||'',
+                            text:recognized, extra:extra||'' })
     }).then(function(r){
       return r.json().catch(function(){ return { error:'Server error (HTTP ' + r.status + ')' }; });
     }).then(cb).catch(function(e){ cb({ error:'Network: ' + e.message }); });
@@ -294,11 +426,11 @@
   function scheduleRead(){ clearTimeout(readTimer); readTimer = setTimeout(doRead, 1600); }
   function doRead(){
     var count = 0;
-    for(var i=0;i<strokes.length;i++) count += strokes[i].pts.length;
+    for(var i=0;i<strokes.length;i++) count += (strokes[i].pts ? strokes[i].pts.length : 2);
     if(count === lastSentCount || !strokes.length) return;
     lastSentCount = count;
     $('rtag').className = 'tag wait'; $('rtag').textContent = 'READING';
-    call('read', '', function(res){
+    call('read', '', '', function(res){
       if(res.error){
         $('rtag').className = 'tag wait'; $('rtag').textContent = 'ERROR';
         $('readtext').innerHTML = '<span class="err">' + esc(res.error) + '</span>';
@@ -310,6 +442,7 @@
     });
   }
 
+  /* ================= tiny markdown ================= */
   function esc(s){
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
@@ -319,7 +452,7 @@
     return o;
   }
   function md(s){
-    var lines = esc(s).split(NL), out = '', inList = false, i, t;
+    var lines = esc(s).split('\n'), out = '', inList = false, i, t;
     for(i=0;i<lines.length;i++){
       t = bold(lines[i].trim());
       if(t === ''){ if(inList){ out += '</ul>'; inList = false; } continue; }
@@ -341,27 +474,162 @@
   function openSheet(title){ $('stitle').textContent = title; $('sheet').classList.add('open'); }
   $('closesheet').onclick = function(){ $('sheet').classList.remove('open'); };
 
-  var LABEL = { explain:'Explain simple', quiz:'Quiz me', summary:'Summary',
-                cards:'Flashcards', solve:'Step by step', fix:'Check my work', ask:'Answer' };
+  var LABEL = { explain:'Explain simple', quiz:'Quiz me', mcq:'Multi-choice', summary:'Summary',
+                cards:'Flashcards', solve:'Step by step', fix:'Check my work', ask:'Answer',
+                mark:'Your marks' };
 
+  /* ================= run a mode ================= */
   function run(mode, question){
     if(busy) return;
-    busy = true; answersPart = ''; $('showans').style.display = 'none';
+    busy = true; answersPart = '';
+    $('showans').style.display = 'none';
+    $('checkmcq').style.display = 'none';
     openSheet(LABEL[mode] || 'Claude');
     $('sbody').innerHTML = '<span class="spin"></span>reading your handwriting...';
-    call(mode, question, function(res){
+
+    var extra = '';
+    if(mode === 'mark'){
+      if(mcq){
+        extra = 'The student was given these multiple choice questions. Correct letters: ' +
+                mcq.items.map(function(it, i){ return (i+1) + ')' + it.correct; }).join(' ') + '\n' +
+                mcq.items.map(function(it, i){ return (i+1) + '. ' + it.q; }).join('\n');
+      } else if(quiz){
+        extra = quiz.questions.join('\n') + '\n\nCorrect answers:\n' + quiz.key;
+      }
+    }
+
+    call(mode, question, extra, function(res){
       busy = false;
       if(res.error){ $('sbody').innerHTML = '<p class="err">' + esc(res.error) + '</p>'; return; }
-      var t = res.text || '', head = t, cut = t.indexOf('--ANSWERS--');
-      if(cut > -1){
-        head = t.substring(0, cut);
-        answersPart = t.substring(cut + 11);
-        $('showans').style.display = 'inline-flex';
-        $('showans').textContent = 'Show answers';
+      var t = res.text || '';
+
+      if(mode === 'mcq'){ renderMCQ(t); }
+      else if(mode === 'mark'){ renderMarks(t); }
+      else {
+        var head = t, cut = t.indexOf('--ANSWERS--');
+        if(cut > -1){
+          head = t.substring(0, cut);
+          answersPart = t.substring(cut + 11);
+          $('showans').style.display = 'inline-flex';
+          $('showans').textContent = 'Show answers';
+        }
+        $('sbody').innerHTML = md(head);
+        if(mode === 'quiz'){
+          quiz = { questions: head.split('\n').filter(function(l){ return /^\s*\d+[.)]/.test(l); }),
+                   key: answersPart };
+          mcq = null;
+          $('markbtn').style.display = 'inline-flex';
+          $('markbtn').textContent = 'Mark my answers';
+        }
       }
-      $('sbody').innerHTML = md(head);
+      sessionLog.push({ title: LABEL[mode] || 'Claude', text: t });
     });
   }
+
+  /* ================= multi choice ================= */
+  function renderMCQ(t){
+    var head = t, key = '', cut = t.indexOf('--ANSWERS--');
+    if(cut > -1){ head = t.substring(0, cut); key = t.substring(cut + 11); }
+
+    var items = [], curItem = null;
+    head.split('\n').forEach(function(raw){
+      var l = raw.trim();
+      if(!l) return;
+      var mo = l.match(/^([A-D])[).]\s*(.+)$/);
+      var mq = l.match(/^Q?\s*(\d+)[.)]\s*(.+)$/);
+      if(mo && curItem){ curItem.opts.push({ letter: mo[1], text: mo[2] }); }
+      else if(mq){ curItem = { q: mq[2], opts: [], correct: '', why: '' }; items.push(curItem); }
+    });
+    // correct letters from the answer block
+    key.split('\n').forEach(function(raw){
+      var m = raw.trim().match(/^(\d+)[).]?\s*[-:]?\s*([A-D])\b\s*[-–—:]?\s*(.*)$/);
+      if(m && items[+m[1] - 1]){ items[+m[1] - 1].correct = m[2]; items[+m[1] - 1].why = m[3] || ''; }
+    });
+
+    if(!items.length){ $('sbody').innerHTML = md(t); return; }
+
+    mcq = { items: items, picks: {} }; quiz = null;
+    $('markbtn').style.display = 'inline-flex';
+    $('markbtn').textContent = 'Mark what I wrote';
+    $('checkmcq').style.display = 'inline-flex';
+
+    var h = '';
+    items.forEach(function(it, i){
+      h += '<div class="mcq" data-i="' + i + '"><div class="qt">' + (i+1) + '. ' + esc(it.q) + '</div>';
+      it.opts.forEach(function(o){
+        h += '<button class="opt" data-q="' + i + '" data-l="' + o.letter + '">' +
+             '<b>' + o.letter + '</b><span>' + esc(o.text) + '</span></button>';
+      });
+      h += '</div>';
+    });
+    $('sbody').innerHTML = h;
+
+    var opts = $('sbody').querySelectorAll('.opt');
+    for(var k=0;k<opts.length;k++){
+      opts[k].onclick = function(){
+        var qi = this.getAttribute('data-q');
+        var sibs = $('sbody').querySelectorAll('.opt[data-q="' + qi + '"]');
+        for(var m=0;m<sibs.length;m++) sibs[m].classList.remove('pick');
+        this.classList.add('pick');
+        mcq.picks[qi] = this.getAttribute('data-l');
+      };
+    }
+  }
+
+  $('checkmcq').onclick = function(){
+    if(!mcq) return;
+    var right = 0;
+    mcq.items.forEach(function(it, i){
+      var sibs = $('sbody').querySelectorAll('.opt[data-q="' + i + '"]');
+      for(var m=0;m<sibs.length;m++){
+        var L = sibs[m].getAttribute('data-l');
+        if(L === it.correct) sibs[m].classList.add('right');
+        if(mcq.picks[i] === L && L !== it.correct) sibs[m].classList.add('wrong');
+      }
+      if(mcq.picks[i] === it.correct) right++;
+      if(it.why){
+        var box = $('sbody').querySelector('.mcq[data-i="' + i + '"]');
+        if(box) box.insertAdjacentHTML('beforeend', '<small style="color:var(--muted)">' + esc(it.why) + '</small>');
+      }
+    });
+    $('sbody').insertAdjacentHTML('afterbegin',
+      '<div class="score">Score: ' + right + ' / ' + mcq.items.length + '</div>');
+    this.style.display = 'none';
+  };
+
+  /* ================= marking handwritten answers ================= */
+  function renderMarks(t){
+    var rows = [], score = '';
+    t.split('\n').forEach(function(raw){
+      var l = raw.trim();
+      if(!l) return;
+      if(/^SCORE:/i.test(l)){ score = l.replace(/^SCORE:\s*/i, ''); return; }
+      var p = l.split('|');
+      if(p.length >= 3){
+        rows.push({ n: p[0].trim(), verdict: p[1].trim().toUpperCase(),
+                    got: (p[2] || '').trim(), note: (p[3] || '').trim() });
+      }
+    });
+    if(!rows.length){ $('sbody').innerHTML = md(t); return; }
+
+    var h = score ? '<div class="score">Score: ' + esc(score) + '</div>' : '';
+    rows.forEach(function(r){
+      var cls = r.verdict === 'RIGHT' ? 'ok' : (r.verdict === 'BLANK' ? 'blank' : 'no');
+      var ic  = r.verdict === 'RIGHT' ? '&#10003;' : (r.verdict === 'BLANK' ? '&ndash;' : '&#10007;');
+      h += '<div class="mk ' + cls + '"><div class="ic">' + ic + '</div><div>' +
+           '<b>Q' + esc(r.n) + '</b> &nbsp;' +
+           (r.got ? 'you wrote: ' + esc(r.got) : '<span style="color:var(--muted)">nothing written</span>') +
+           (r.note ? '<small>' + esc(r.note) + '</small>' : '') +
+           '</div></div>';
+    });
+    $('sbody').innerHTML = h;
+  }
+
+  $('markbtn').onclick = function(){
+    if(!quiz && !mcq){ toast('Ask for a quiz first'); return; }
+    run('mark', '');
+  };
+
   $('showans').onclick = function(){
     if(!answersPart) return;
     $('sbody').insertAdjacentHTML('beforeend', '<div class="ansbox">' + md(answersPart) + '</div>');
@@ -378,23 +646,41 @@
   };
   $('q').addEventListener('keydown', function(e){ if(e.key === 'Enter') $('send').click(); });
 
-  /* ---------- tools ---------- */
+  /* ================= tools ================= */
   function setTool(t){
     tool = t;
     $('tPen').className = 'btn sm' + (t === 'pen' ? ' on' : '');
     $('tHi').className  = 'btn sm' + (t === 'hi' ? ' on' : '');
     $('tEr').className  = 'btn sm' + (t === 'erase' ? ' on' : '');
+    var sb = $('rail').querySelectorAll('[data-shape]');
+    for(var i=0;i<sb.length;i++)
+      sb[i].className = 'btn' + (sb[i].getAttribute('data-shape') === t ? ' on' : '');
   }
   $('tPen').onclick = function(){ setTool('pen'); };
   $('tHi').onclick  = function(){ setTool('hi'); };
   $('tEr').onclick  = function(){ setTool('erase'); };
+  var shapeBtns = $('rail').querySelectorAll('[data-shape]');
+  for(var s=0;s<shapeBtns.length;s++){
+    (function(b){ b.onclick = function(){ setTool(b.getAttribute('data-shape')); }; })(shapeBtns[s]);
+  }
   setTool('pen');
+
+  $('railBtn').onclick = function(){
+    var hidden = $('rail').classList.toggle('hide');
+    this.className = 'btn sm ghost' + (hidden ? '' : ' on');
+    fit();
+  };
+  $('gridBtn').onclick = function(){
+    var on = C.classList.toggle('grid');
+    this.className = 'btn' + (on ? ' on' : '');
+  };
 
   var sw = document.querySelectorAll('.swatch');
   for(var k=0;k<sw.length;k++){
     (function(b){
       b.onclick = function(){
-        color = b.getAttribute('data-c'); setTool('pen');
+        color = b.getAttribute('data-c');
+        if(tool === 'erase' || tool === 'hi') setTool('pen');
         for(var m=0;m<sw.length;m++) sw[m].classList.remove('on');
         b.classList.add('on');
       };
@@ -411,16 +697,91 @@
   };
   $('newnote').onclick = function(){
     if(strokes.length && !confirm('Start a new blank page?')) return;
-    strokes = []; recognized = ''; lastSentCount = -1; redraw();
+    strokes = []; recognized = ''; lastSentCount = -1;
+    quiz = null; mcq = null; sessionLog = [];
+    $('markbtn').style.display = 'none';
+    redraw();
     $('readtext').textContent = 'Your handwriting appears here a moment after you stop writing.';
     $('rtag').className = 'tag wait'; $('rtag').textContent = 'READING';
   };
 
-  /* ---------- saved notes ---------- */
+  /* ================= export ================= */
+  $('exportBtn').onclick = function(e){
+    e.stopPropagation();
+    $('expmenu').classList.toggle('on');
+  };
+  document.addEventListener('click', function(){ $('expmenu').classList.remove('on'); });
+  $('expmenu').addEventListener('click', function(e){ e.stopPropagation(); });
+
+  var expBtns = $('expmenu').querySelectorAll('[data-exp]');
+  for(var x=0;x<expBtns.length;x++){
+    (function(b){
+      b.onclick = function(){
+        $('expmenu').classList.remove('on');
+        doExport(b.getAttribute('data-exp'));
+      };
+    })(expBtns[x]);
+  }
+
+  function noteTitle(){
+    return (recognized.split('\n')[0] || 'My note').slice(0, 60);
+  }
+
+  function doExport(kind){
+    var o = exportCanvas();
+    if(!o){ toast('Write something first'); return; }
+    var img = o.toDataURL('image/png');
+
+    if(kind === 'png'){
+      var a = document.createElement('a');
+      a.href = img; a.download = noteTitle().replace(/[^a-z0-9]+/gi, '-') + '.png';
+      document.body.appendChild(a); a.click(); a.remove();
+      toast('Saved as image');
+      return;
+    }
+
+    var w = window.open('', '_blank');
+    if(!w){ toast('Allow pop-ups to export'); return; }
+    var slide = (kind === 'slides');
+    var css =
+      'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;' +
+      'color:#111;margin:0;padding:0}' +
+      'h1{font-size:26px;margin:0 0 6px}h2{font-size:19px;color:#0b6;margin:18px 0 6px}' +
+      'h3{font-size:17px;margin:14px 0 4px}p,li{font-size:15px;line-height:1.5}' +
+      'img{max-width:100%;border:1px solid #ddd;border-radius:8px}' +
+      '.sec{padding:28px 34px}' +
+      (slide
+        ? '@page{size:landscape}.sec{page-break-after:always;min-height:92vh;' +
+          'display:flex;flex-direction:column;justify-content:center}'
+        : '@page{margin:16mm}') +
+      '.meta{color:#777;font-size:12px;margin-bottom:18px}';
+
+    var h = '<!doctype html><html><head><meta charset="utf-8"><title>' +
+            esc(noteTitle()) + '</title><style>' + css + '</style></head><body>';
+    h += '<div class="sec"><h1>' + esc(noteTitle()) + '</h1>' +
+         '<div class="meta">PenNotes &middot; ' + new Date().toLocaleString() + '</div>' +
+         '<img src="' + img + '"></div>';
+    if(recognized){
+      h += '<div class="sec"><h2>What the note says</h2><p>' +
+           esc(recognized).replace(/\n/g, '<br>') + '</p></div>';
+    }
+    sessionLog.forEach(function(entry){
+      h += '<div class="sec"><h2>' + esc(entry.title) + '</h2>' + md(entry.text) + '</div>';
+    });
+    h += '</body></html>';
+
+    w.document.open(); w.document.write(h); w.document.close();
+    setTimeout(function(){ try{ w.focus(); w.print(); }catch(e){} }, 700);
+  }
+
+  /* ================= saved notes ================= */
   function notes(){
     try { return JSON.parse(localStorage.getItem('pn_notes') || '[]'); } catch(e){ return []; }
   }
-  function saveNotes(n){ localStorage.setItem('pn_notes', JSON.stringify(n)); }
+  function saveNotes(n){
+    try { localStorage.setItem('pn_notes', JSON.stringify(n)); }
+    catch(e){ toast('Storage full - delete an old note'); }
+  }
   function renderNotes(){
     var n = notes(), h = '', i;
     if(!n.length) h = '<div class="note"><div><small>No saved notes yet.</small></div></div>';
@@ -454,7 +815,7 @@
   $('savenote').onclick = function(){
     if(!strokes.length){ toast('Nothing to save'); return; }
     var n = notes();
-    n.unshift({ t:Date.now(), title:(recognized.split(NL)[0] || 'Untitled').slice(0,60), s:strokes });
+    n.unshift({ t:Date.now(), title:noteTitle(), s:strokes });
     saveNotes(n.slice(0,40)); renderNotes(); toast('Saved');
   };
   function drawer(open){
