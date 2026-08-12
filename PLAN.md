@@ -26,7 +26,12 @@
 - The page runs correctly — screenshotted in Chromium from `web/index.html`.
 - Local git repo initialised. Key is NOT in git.
 
-**The page still needs a host.** Supabase cannot serve it: both Edge Functions *and* Storage force
+**LIVE 2026-08-12: https://absoumai.github.io/pennotes/** — passcode `pn-xqd8-66dy-8fwe`.
+Page hosted on GitHub Pages from the public repo `absoumai/pennotes` (one HTML file, no secrets).
+Project code lives in the private repo `absoumai/Claude-Project`. Verified: HTTP 200, real `text/html`,
+old passcode rejected, new passcode returns a correct answer from Claude.
+
+Why not Supabase: both Edge Functions *and* Storage force
 `content-type: text/plain` + `content-security-policy: default-src 'none'; sandbox` on any HTML,
 which kills the scripts. That is Supabase anti-phishing policy, not a bug we can fix. Tried and confirmed both.
 
