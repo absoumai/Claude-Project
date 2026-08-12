@@ -300,6 +300,7 @@
   <div class="notelist" id="notelist"></div>
   <div style="padding:12px; display:flex; gap:8px">
     <button class="btn sm" id="savenote">Save this note</button>
+    <button class="btn sm ghost" id="chgpass">Passcode</button>
     <button class="btn sm ghost" id="closedrawer">Close</button>
   </div>
 </div>
@@ -559,6 +560,8 @@
                             extra:extra||'', pasted:pasted,
                             selected:(mode !== 'read' && !!selection) })
     }).then(function(r){
+      // Passcode changed (or wrong): forget it so the next tap asks for the new one.
+      if(r.status === 401) localStorage.removeItem('pn_pass');
       return r.json().catch(function(){ return { error:'Server error (HTTP ' + r.status + ')' }; });
     }).then(cb).catch(function(e){ cb({ error:'Network: ' + e.message }); });
   }
@@ -1029,6 +1032,10 @@
     $('scrim').classList.toggle('on', open);
     if(open) renderNotes();
   }
+  $('chgpass').onclick = function(){
+    var p = window.prompt('Passcode for this iPad:', localStorage.getItem('pn_pass') || '');
+    if(p !== null){ localStorage.setItem('pn_pass', p.trim()); toast('Passcode saved'); }
+  };
   $('menu').onclick = function(){ drawer(true); };
   $('closedrawer').onclick = function(){ drawer(false); };
   $('scrim').onclick = function(){ drawer(false); };
