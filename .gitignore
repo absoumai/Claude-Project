@@ -1,0 +1,12 @@
+.env
+.env.*
+*.key
+*key*.txt
+token.json
+credentials.json
+node_modules/
+.DS_Store
+
+# real key lives here, never commit
+secrets.ts
+supabase/functions/*/secrets.ts
