@@ -11,7 +11,7 @@
 <style>
   :root{
     --navy:#0A0F1E; --panel:#111A31; --line:#22304f;
-    --cyan:#00FFFF; --violet:#8b5cf6; --green:#00ff88; --red:#ff3366;
+    --cyan:#00FFFF; --violet:#8b5cf6; --green:#00ff88; --red:#ff3366; --amber:#ffb020;
     --paper:#fbf9f2; --rule:#dfe7f1; --muted:#93a4c4;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
@@ -34,12 +34,16 @@
   .btn.on{background:var(--cyan); color:#04121b; border-color:var(--cyan)}
   .btn.ghost{background:transparent}
   .btn.sm{padding:8px 10px; font-size:14px; min-height:38px}
+  .btn.icon{font-size:17px; padding:8px 12px}
   .swatch{width:30px; height:30px; border-radius:50%; border:2px solid #2c3b5e; padding:0; flex:0 0 auto}
   .swatch.on{border-color:#fff; box-shadow:0 0 0 2px var(--cyan)}
 
-  .mid{flex:1 1 auto; display:flex; min-height:0}
+  .legend{display:flex; gap:14px; padding:6px 12px; background:#0d1730; font-size:11.5px;
+    color:var(--muted); border-bottom:1px solid var(--line); overflow-x:auto; flex:0 0 auto}
+  .legend span{white-space:nowrap}
+  .legend i{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px}
 
-  /* shapes rail */
+  .mid{flex:1 1 auto; display:flex; min-height:0}
   .rail{flex:0 0 auto; width:74px; background:var(--panel); border-right:1px solid var(--line);
     display:flex; flex-direction:column; gap:6px; padding:8px 6px; overflow-y:auto}
   .rail.hide{display:none}
@@ -48,10 +52,12 @@
   .railhead{font-size:10px; letter-spacing:.8px; color:var(--muted); text-align:center; margin:2px 0}
 
   .scroll{flex:1 1 auto; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch;
-    background:#070c17; padding:10px}
+    background:#070c17; padding:10px; overscroll-behavior:contain}
   .padwrap{position:relative; margin:0 auto; max-width:1100px; border-radius:14px; overflow:hidden;
     box-shadow:0 10px 30px rgba(0,0,0,.45)}
-  canvas#pad{display:block; width:100%; touch-action:pan-y; background-color:var(--paper);
+  /* touch-action MUST stay none: with pan-y, iPadOS lets the Pencil scroll the page
+     mid-stroke. Finger scrolling over the canvas is done by hand in JS instead. */
+  canvas#pad{display:block; width:100%; touch-action:none; background-color:var(--paper);
     background-image:repeating-linear-gradient(to bottom, transparent 0 43px, var(--rule) 43px 44px)}
   canvas#pad.grid{background-image:
     repeating-linear-gradient(to bottom, transparent 0 27px, var(--rule) 27px 28px),
@@ -65,6 +71,12 @@
   .tag.wait{background:#2c3b5e; color:var(--muted)}
   #readtext{flex:1; font-size:14px; line-height:1.4; color:#cfe0ff; max-height:56px; overflow:auto;
     white-space:pre-wrap; -webkit-user-select:text; user-select:text}
+  .chips{display:flex; gap:6px; padding:0 12px 8px; flex-wrap:wrap}
+  .chip{display:none; align-items:center; gap:8px; font-size:12.5px; background:#0d1730;
+    border:1px solid var(--violet); color:#dbe7ff; border-radius:999px; padding:6px 10px}
+  .chip.on{display:inline-flex}
+  .chip b{color:var(--violet)}
+  .chip button{background:none; border:0; color:var(--muted); font-size:16px; cursor:pointer; padding:0 2px}
   .actions{display:flex; gap:8px; padding:10px 12px; overflow-x:auto}
   .qbox{display:flex; gap:8px; padding:0 12px 10px}
   .qbox input{flex:1; background:#0d1730; border:1px solid var(--line); color:#eaf2ff;
@@ -86,14 +98,25 @@
   .sbody ul{margin:0 0 10px 18px; padding:0}
   .sbody li{margin:0 0 6px}
   .sbody strong{color:#fff}
+  .sbody code{background:#0d1730; padding:2px 6px; border-radius:6px; font-size:15px;
+    font-family:ui-monospace,Menlo,Consolas,monospace}
+  .cmd{display:flex; align-items:center; gap:10px; background:#04121b; border:1px solid var(--green);
+    border-radius:10px; padding:10px 12px; margin:0 0 8px; font-family:ui-monospace,Menlo,Consolas,monospace;
+    font-size:15px; color:var(--green); overflow-x:auto}
+  .cmd span{flex:1; white-space:pre; -webkit-user-select:text; user-select:text}
+  .cmd button{flex:0 0 auto; background:#0d2b1e; border:1px solid var(--green); color:var(--green);
+    border-radius:8px; padding:6px 10px; font-size:12px; font-weight:700; cursor:pointer}
   .ansbox{border:1px dashed var(--violet); border-radius:12px; padding:12px; margin-top:14px}
+  .srcs{margin-top:16px; border-top:1px solid var(--line); padding-top:10px}
+  .srcs h4{margin:0 0 6px; font-size:12px; letter-spacing:.6px; color:var(--muted)}
+  .srcs a{display:block; color:var(--cyan); font-size:13.5px; margin:0 0 5px; text-decoration:none;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .spin{width:18px; height:18px; border:3px solid #2c3b5e; border-top-color:var(--cyan);
     border-radius:50%; animation:sp .8s linear infinite; display:inline-block;
     vertical-align:middle; margin-right:8px}
   @keyframes sp{to{transform:rotate(360deg)}}
   .err{color:var(--red)}
 
-  /* multi choice */
   .mcq{border:1px solid var(--line); border-radius:14px; padding:12px; margin:0 0 12px}
   .mcq .qt{font-weight:700; margin-bottom:8px}
   .opt{display:flex; align-items:center; gap:10px; width:100%; text-align:left; margin:0 0 6px;
@@ -104,7 +127,6 @@
   .opt.right{border-color:var(--green); background:rgba(0,255,136,.12)}
   .opt.wrong{border-color:var(--red); background:rgba(255,51,102,.12)}
 
-  /* marking */
   .mk{display:flex; gap:10px; padding:10px 0; border-bottom:1px solid var(--line)}
   .mk .ic{flex:0 0 auto; width:26px; height:26px; border-radius:50%; display:flex;
     align-items:center; justify-content:center; font-weight:800; font-size:15px}
@@ -137,6 +159,33 @@
   .menu button{display:block; width:100%; text-align:left; background:none; border:0; color:#eaf2ff;
     padding:12px 14px; font-size:15px; border-radius:10px; cursor:pointer}
   .menu button:active{background:#16203c}
+
+  /* ---------- portrait / narrow: wrap the bar, lay the rail flat ---------- */
+  @media (orientation: portrait), (max-width: 820px){
+    .top{flex-wrap:wrap; overflow-x:visible; gap:6px; padding:8px 10px}
+    .top .spacer{display:none}
+    .brand{font-size:14px}
+    .btn.sm{padding:7px 10px; font-size:13.5px; min-height:38px}
+    .swatch{width:27px; height:27px}
+    .legend{gap:10px; font-size:11px}
+    .mid{flex-direction:column}
+    .rail{width:100%; flex-direction:row; gap:6px; overflow-x:auto; overflow-y:hidden;
+      border-right:0; border-bottom:1px solid var(--line); padding:6px 8px}
+    .rail .btn{width:auto; min-width:66px; min-height:48px}
+    .railhead{display:none}
+    .scroll{padding:8px}
+    .sheet{max-height:78%}
+    .sbody{font-size:16px}
+  }
+
+  /* ---------- short landscape (phone): claw back vertical space ---------- */
+  @media (orientation: landscape) and (max-height: 560px){
+    .legend{display:none}
+    .sheet{max-height:94%}
+    .btn{min-height:38px; padding:7px 11px; font-size:14px}
+    .readrow{padding:6px 12px}
+    #readtext{max-height:38px}
+  }
 </style>
 </head>
 <body>
@@ -147,6 +196,7 @@
     <span class="brand">PenNotes</span>
     <button class="btn sm" id="tPen">Pen</button>
     <button class="btn sm" id="tHi">Hilite</button>
+    <button class="btn sm" id="tLasso">Circle</button>
     <button class="btn sm" id="tEr">Erase</button>
     <button class="btn sm ghost" id="railBtn">Shapes</button>
     <button class="swatch" data-c="#0d1b2a" style="background:#0d1b2a"></button>
@@ -155,8 +205,17 @@
     <span class="spacer"></span>
     <button class="btn sm ghost" id="undo">Undo</button>
     <button class="btn sm ghost" id="finger">Pen only</button>
+    <button class="btn sm ghost" id="paste">Paste</button>
     <button class="btn sm ghost" id="newnote">New</button>
     <button class="btn sm" id="exportBtn">Export</button>
+  </div>
+
+  <div class="legend">
+    <span><i style="background:#0d1b2a;border:1px solid #6b7a99"></i>black = your notes</span>
+    <span><i style="background:#1f6feb"></i>blue = what is this?</span>
+    <span><i style="background:#d92b2b"></i>red = I don't get it</span>
+    <span><i style="background:#ffd600"></i>yellow = focus here</span>
+    <span>Circle = ask about that bit only</span>
   </div>
 
   <div class="mid">
@@ -185,8 +244,16 @@
       <span class="tag wait" id="rtag">READING</span>
       <div id="readtext">Your handwriting appears here a moment after you stop writing.</div>
     </div>
+    <div class="chips">
+      <span class="chip" id="selchip"><b>Circled</b> <span id="selinfo">a bit of the page</span>
+        <button id="selclear">&#215;</button></span>
+      <span class="chip" id="pastechip"><b>Pasted</b> <span id="pasteinfo"></span>
+        <button id="pasteclear">&#215;</button></span>
+    </div>
     <div class="actions">
       <button class="btn" id="markbtn">Mark my answers</button>
+      <button class="btn" data-mode="know" title="What / Why / When to use / How to defend">&#9432; Know more</button>
+      <button class="btn" data-mode="terminal" title="Install and run commands">&gt;_ Terminal</button>
       <button class="btn" data-mode="explain">Explain simple</button>
       <button class="btn" data-mode="quiz">Quiz me</button>
       <button class="btn" data-mode="mcq">Multi-choice</button>
@@ -206,6 +273,7 @@
   <div class="shead">
     <b id="stitle">Claude</b>
     <span class="spacer"></span>
+    <button class="btn sm ghost" id="copyall">Copy</button>
     <button class="btn sm ghost" id="checkmcq" style="display:none">Check answers</button>
     <button class="btn sm ghost" id="showans" style="display:none">Show answers</button>
     <button class="btn sm ghost" id="closesheet">Close</button>
@@ -241,10 +309,10 @@
   var strokes = [], cur = null;
   var tool = 'pen', color = '#0d1b2a', penOnly = true;
   var recognized = '', lastSentCount = -1, readTimer = null, busy = false;
-  var answersPart = '';
-  var quiz = null;          // { questions:[..], key:'..' }  set by Quiz me
-  var mcq = null;           // { items:[{q, opts:[], correct, why}], picks:{} }
-  var sessionLog = [];      // everything Claude produced this session, for export
+  var answersPart = '', lastAnswer = '';
+  var quiz = null, mcq = null, sessionLog = [];
+  var selection = null, hideSel = false, pasted = '';
+  var panning = null;   // finger-drag scrolling, done by hand (see touch-action note in CSS)
 
   var SHAPES = { line:1, arrow:1, rect:1, circle:1, tri:1, axes:1 };
 
@@ -266,19 +334,14 @@
       if(s.tool === 'arrow'){
         var a = Math.atan2(y1 - y0, x1 - x0), h = 16;
         X.beginPath();
-        X.moveTo(x1, y1);
-        X.lineTo(x1 - h * Math.cos(a - 0.4), y1 - h * Math.sin(a - 0.4));
-        X.moveTo(x1, y1);
-        X.lineTo(x1 - h * Math.cos(a + 0.4), y1 - h * Math.sin(a + 0.4));
+        X.moveTo(x1, y1); X.lineTo(x1 - h*Math.cos(a - 0.4), y1 - h*Math.sin(a - 0.4));
+        X.moveTo(x1, y1); X.lineTo(x1 - h*Math.cos(a + 0.4), y1 - h*Math.sin(a + 0.4));
         X.stroke();
       }
     } else if(s.tool === 'rect'){
-      X.rect(Math.min(x0,x1), Math.min(y0,y1), Math.abs(x1-x0), Math.abs(y1-y0));
-      X.stroke();
+      X.rect(Math.min(x0,x1), Math.min(y0,y1), Math.abs(x1-x0), Math.abs(y1-y0)); X.stroke();
     } else if(s.tool === 'circle'){
-      var cx = (x0+x1)/2, cy = (y0+y1)/2;
-      X.ellipse(cx, cy, Math.abs(x1-x0)/2, Math.abs(y1-y0)/2, 0, 0, 6.3);
-      X.stroke();
+      X.ellipse((x0+x1)/2, (y0+y1)/2, Math.abs(x1-x0)/2, Math.abs(y1-y0)/2, 0, 0, 6.3); X.stroke();
     } else if(s.tool === 'tri'){
       X.moveTo((x0+x1)/2, y0); X.lineTo(x1, y1); X.lineTo(x0, y1); X.closePath(); X.stroke();
     } else if(s.tool === 'axes'){
@@ -294,7 +357,7 @@
     X.save();
     X.lineCap = 'round'; X.lineJoin = 'round';
     if(s.tool === 'erase'){ X.globalCompositeOperation = 'destination-out'; X.strokeStyle = 'rgba(0,0,0,1)'; }
-    else if(s.tool === 'hi'){ X.globalCompositeOperation = 'multiply'; X.strokeStyle = 'rgba(255,214,0,.42)'; }
+    else if(s.tool === 'hi'){ X.globalCompositeOperation = 'multiply'; X.strokeStyle = 'rgba(255,214,0,.45)'; }
     else { X.globalCompositeOperation = 'source-over'; X.strokeStyle = s.color; }
 
     if(SHAPES[s.tool]){ X.lineWidth = s.w; drawShape(s); X.restore(); return; }
@@ -313,10 +376,22 @@
     X.restore();
   }
 
+  function drawSelOutline(){
+    if(!selection || hideSel) return;
+    X.save();
+    X.setLineDash([9, 7]); X.lineWidth = 2; X.strokeStyle = '#8b5cf6';
+    X.beginPath();
+    X.moveTo(selection.pts[0].x, selection.pts[0].y);
+    for(var i=1;i<selection.pts.length;i++) X.lineTo(selection.pts[i].x, selection.pts[i].y);
+    X.closePath(); X.stroke();
+    X.restore();
+  }
+
   function redraw(){
     X.setTransform(1,0,0,1,0,0); X.clearRect(0,0,C.width,C.height);
     X.setTransform(DPR,0,0,DPR,0,0);
     for(var i=0;i<strokes.length;i++) drawStroke(strokes[i]);
+    drawSelOutline();
     $('hint').style.display = strokes.length ? 'none' : 'block';
   }
 
@@ -337,16 +412,33 @@
   }
 
   C.addEventListener('pointerdown', function(e){
-    if(!accepts(e)) return;
+    if(!accepts(e)){
+      // Pen-only mode: a finger on the page scrolls it instead of drawing.
+      if(penOnly && e.pointerType === 'touch'){
+        panning = { y: e.clientY, top: $('scroll').scrollTop };
+        C.setPointerCapture(e.pointerId);
+      }
+      return;
+    }
     e.preventDefault(); C.setPointerCapture(e.pointerId);
     var p = pos(e);
+    if(tool === 'lasso'){ cur = { lasso:true, pts:[p] }; redraw(); return; }
     if(SHAPES[tool]) cur = { tool:tool, color:color, w:widthFor(), x0:p.x, y0:p.y, x1:p.x, y1:p.y };
     else cur = { tool:tool, color:color, w:widthFor(), pts:[p] };
     strokes.push(cur); redraw();
   });
   C.addEventListener('pointermove', function(e){
+    if(panning && e.pointerType === 'touch'){
+      e.preventDefault();
+      $('scroll').scrollTop = panning.top - (e.clientY - panning.y);
+      return;
+    }
     if(!cur || !accepts(e)) return;
     e.preventDefault();
+    if(cur.lasso){
+      cur.pts.push(pos(e));
+      selection = cur; redraw(); return;
+    }
     if(SHAPES[cur.tool]){ var p = pos(e); cur.x1 = p.x; cur.y1 = p.y; }
     else {
       var pts = (e.getCoalescedEvents ? e.getCoalescedEvents() : [e]);
@@ -354,18 +446,37 @@
     }
     redraw();
   });
-  function endStroke(){ if(!cur) return; cur = null; scheduleRead(); }
+  function endStroke(){
+    panning = null;
+    if(!cur) return;
+    if(cur.lasso){
+      if(cur.pts.length < 6){ selection = null; }
+      else { selection = cur; showSel(); }
+      cur = null; redraw(); return;
+    }
+    cur = null; scheduleRead();
+  }
   C.addEventListener('pointerup', endStroke);
   C.addEventListener('pointercancel', endStroke);
   C.addEventListener('pointerleave', endStroke);
   window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', function(){ setTimeout(fit, 250); });
+  if(window.visualViewport) window.visualViewport.addEventListener('resize', fit);
 
-  /* ============ export the written area as PNG ============ */
+  function showSel(){
+    $('selchip').classList.add('on');
+    $('selinfo').textContent = 'questions use only this part';
+  }
+  $('selclear').onclick = function(){
+    selection = null; $('selchip').classList.remove('on'); redraw(); setTool('pen');
+  };
+
+  /* ============ export (whole page or just the circled part) ============ */
   function bounds(){
     var minx=1e9, miny=1e9, maxx=-1e9, maxy=-1e9, seen=false, i, j;
     for(i=0;i<strokes.length;i++){
       var s = strokes[i];
-      if(s.tool === 'erase') continue;
+      if(s.tool === 'erase' || s.lasso) continue;
       if(SHAPES[s.tool]){
         seen = true;
         minx = Math.min(minx, s.x0, s.x1); maxx = Math.max(maxx, s.x0, s.x1);
@@ -381,23 +492,43 @@
     }
     return seen ? {minx:minx, miny:miny, maxx:maxx, maxy:maxy} : null;
   }
+  function selBounds(){
+    var p = selection.pts, minx=1e9, miny=1e9, maxx=-1e9, maxy=-1e9;
+    for(var i=0;i<p.length;i++){
+      if(p[i].x<minx) minx=p[i].x; if(p[i].x>maxx) maxx=p[i].x;
+      if(p[i].y<miny) miny=p[i].y; if(p[i].y>maxy) maxy=p[i].y;
+    }
+    return {minx:minx, miny:miny, maxx:maxx, maxy:maxy};
+  }
 
-  function exportCanvas(){
-    var b = bounds(); if(!b) return null;
-    var pad = 26, cssW = C.width / DPR;
+  function exportCanvas(useSel){
+    var b = (useSel && selection) ? selBounds() : bounds();
+    if(!b) return null;
+    var pad = useSel && selection ? 8 : 26, cssW = C.width / DPR;
     var minx = Math.max(0, b.minx - pad), miny = Math.max(0, b.miny - pad);
     var maxx = Math.min(cssW, b.maxx + pad), maxy = Math.min(PAGE_H, b.maxy + pad);
     var w = Math.max(8, maxx - minx), h = Math.max(8, maxy - miny);
     var scale = Math.min(2, Math.max(1, 1400 / w));
+
+    hideSel = true; redraw();
     var o = document.createElement('canvas');
     o.width = Math.round(w * scale); o.height = Math.round(h * scale);
     var ox = o.getContext('2d');
     ox.fillStyle = '#ffffff'; ox.fillRect(0, 0, o.width, o.height);
+    if(useSel && selection){
+      ox.save(); ox.beginPath();
+      var p = selection.pts;
+      ox.moveTo((p[0].x - minx) * scale, (p[0].y - miny) * scale);
+      for(var i=1;i<p.length;i++) ox.lineTo((p[i].x - minx) * scale, (p[i].y - miny) * scale);
+      ox.closePath(); ox.clip();
+    }
     ox.drawImage(C, minx*DPR, miny*DPR, w*DPR, h*DPR, 0, 0, o.width, o.height);
+    if(useSel && selection) ox.restore();
+    hideSel = false; redraw();
     return o;
   }
-  function exportPNG(){
-    var o = exportCanvas();
+  function exportPNG(useSel){
+    var o = exportCanvas(useSel);
     return o ? o.toDataURL('image/png').split(',')[1] : null;
   }
 
@@ -411,13 +542,14 @@
     return p;
   }
   function call(mode, question, extra, cb){
-    var img = exportPNG();
+    var img = exportPNG(mode !== 'read');
     if(!img){ cb({ error:'Write something on the page first.' }); return; }
     fetch(API, {
       method:'POST',
       headers:{ 'content-type':'application/json', 'x-pass':pass() },
-      body:JSON.stringify({ mode:mode, image:img, question:question||'',
-                            text:recognized, extra:extra||'' })
+      body:JSON.stringify({ mode:mode, image:img, question:question||'', text:recognized,
+                            extra:extra||'', pasted:pasted,
+                            selected:(mode !== 'read' && !!selection) })
     }).then(function(r){
       return r.json().catch(function(){ return { error:'Server error (HTTP ' + r.status + ')' }; });
     }).then(cb).catch(function(e){ cb({ error:'Network: ' + e.message }); });
@@ -442,7 +574,7 @@
     });
   }
 
-  /* ================= tiny markdown ================= */
+  /* ================= rendering ================= */
   function esc(s){
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
@@ -451,11 +583,26 @@
     for(var i=0;i<parts.length;i++) o += (i % 2 ? '<strong>' + parts[i] + '</strong>' : parts[i]);
     return o;
   }
+  function inlineCode(t){
+    var parts = t.split('`'), o = '';
+    for(var i=0;i<parts.length;i++) o += (i % 2 ? '<code>' + parts[i] + '</code>' : parts[i]);
+    return o;
+  }
   function md(s){
-    var lines = esc(s).split('\n'), out = '', inList = false, i, t;
+    var lines = esc(s).split('\n'), out = '', inList = false, i, raw, t;
     for(i=0;i<lines.length;i++){
-      t = bold(lines[i].trim());
-      if(t === ''){ if(inList){ out += '</ul>'; inList = false; } continue; }
+      raw = lines[i].trim();
+      if(raw === ''){ if(inList){ out += '</ul>'; inList = false; } continue; }
+
+      // a whole line that is one command -> copyable command row
+      var m = raw.match(/^`(.+)`$/);
+      if(m){
+        if(inList){ out += '</ul>'; inList = false; }
+        out += '<div class="cmd"><span>' + m[1] + '</span>' +
+               '<button data-cmd="' + m[1].replace(/"/g,'&quot;') + '">Copy</button></div>';
+        continue;
+      }
+      t = inlineCode(bold(raw));
       if(t.indexOf('### ') === 0 || t.indexOf('## ') === 0 || t.indexOf('# ') === 0){
         if(inList){ out += '</ul>'; inList = false; }
         out += '<h3>' + t.substring(t.indexOf(' ') + 1) + '</h3>';
@@ -471,21 +618,46 @@
     return out;
   }
 
+  function wireCopyButtons(){
+    var b = $('sbody').querySelectorAll('[data-cmd]');
+    for(var i=0;i<b.length;i++){
+      (function(el){
+        el.onclick = function(){ copy(el.getAttribute('data-cmd')); el.textContent = 'Copied'; };
+      })(b[i]);
+    }
+  }
+  function copy(t){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){ toast('Copied'); },
+                                           function(){ toast('Could not copy'); });
+    } else { toast('Could not copy'); }
+  }
+  function sourcesHTML(list){
+    if(!list || !list.length) return '';
+    var h = '<div class="srcs"><h4>SOURCES</h4>';
+    for(var i=0;i<list.length;i++){
+      h += '<a href="' + esc(list[i].url) + '" target="_blank" rel="noopener">' +
+           esc(list[i].title || list[i].url) + '</a>';
+    }
+    return h + '</div>';
+  }
+
   function openSheet(title){ $('stitle').textContent = title; $('sheet').classList.add('open'); }
   $('closesheet').onclick = function(){ $('sheet').classList.remove('open'); };
+  $('copyall').onclick = function(){ if(lastAnswer) copy(lastAnswer); };
 
   var LABEL = { explain:'Explain simple', quiz:'Quiz me', mcq:'Multi-choice', summary:'Summary',
                 cards:'Flashcards', solve:'Step by step', fix:'Check my work', ask:'Answer',
-                mark:'Your marks' };
+                mark:'Your marks', know:'Know more', terminal:'Terminal' };
 
-  /* ================= run a mode ================= */
   function run(mode, question){
     if(busy) return;
     busy = true; answersPart = '';
     $('showans').style.display = 'none';
     $('checkmcq').style.display = 'none';
     openSheet(LABEL[mode] || 'Claude');
-    $('sbody').innerHTML = '<span class="spin"></span>reading your handwriting...';
+    $('sbody').innerHTML = '<span class="spin"></span>' +
+      (mode === 'terminal' ? 'searching for the right commands...' : 'reading your handwriting...');
 
     var extra = '';
     if(mode === 'mark'){
@@ -502,6 +674,7 @@
       busy = false;
       if(res.error){ $('sbody').innerHTML = '<p class="err">' + esc(res.error) + '</p>'; return; }
       var t = res.text || '';
+      lastAnswer = t;
 
       if(mode === 'mcq'){ renderMCQ(t); }
       else if(mode === 'mark'){ renderMarks(t); }
@@ -513,7 +686,8 @@
           $('showans').style.display = 'inline-flex';
           $('showans').textContent = 'Show answers';
         }
-        $('sbody').innerHTML = md(head);
+        $('sbody').innerHTML = md(head) + sourcesHTML(res.sources);
+        wireCopyButtons();
         if(mode === 'quiz'){
           quiz = { questions: head.split('\n').filter(function(l){ return /^\s*\d+[.)]/.test(l); }),
                    key: answersPart };
@@ -533,19 +707,16 @@
 
     var items = [], curItem = null;
     head.split('\n').forEach(function(raw){
-      var l = raw.trim();
-      if(!l) return;
+      var l = raw.trim(); if(!l) return;
       var mo = l.match(/^([A-D])[).]\s*(.+)$/);
       var mq = l.match(/^Q?\s*(\d+)[.)]\s*(.+)$/);
       if(mo && curItem){ curItem.opts.push({ letter: mo[1], text: mo[2] }); }
       else if(mq){ curItem = { q: mq[2], opts: [], correct: '', why: '' }; items.push(curItem); }
     });
-    // correct letters from the answer block
     key.split('\n').forEach(function(raw){
       var m = raw.trim().match(/^(\d+)[).]?\s*[-:]?\s*([A-D])\b\s*[-–—:]?\s*(.*)$/);
       if(m && items[+m[1] - 1]){ items[+m[1] - 1].correct = m[2]; items[+m[1] - 1].why = m[3] || ''; }
     });
-
     if(!items.length){ $('sbody').innerHTML = md(t); return; }
 
     mcq = { items: items, picks: {} }; quiz = null;
@@ -589,7 +760,8 @@
       if(mcq.picks[i] === it.correct) right++;
       if(it.why){
         var box = $('sbody').querySelector('.mcq[data-i="' + i + '"]');
-        if(box) box.insertAdjacentHTML('beforeend', '<small style="color:var(--muted)">' + esc(it.why) + '</small>');
+        if(box) box.insertAdjacentHTML('beforeend',
+          '<small style="color:var(--muted)">' + esc(it.why) + '</small>');
       }
     });
     $('sbody').insertAdjacentHTML('afterbegin',
@@ -597,12 +769,11 @@
     this.style.display = 'none';
   };
 
-  /* ================= marking handwritten answers ================= */
+  /* ================= marking ================= */
   function renderMarks(t){
     var rows = [], score = '';
     t.split('\n').forEach(function(raw){
-      var l = raw.trim();
-      if(!l) return;
+      var l = raw.trim(); if(!l) return;
       if(/^SCORE:/i.test(l)){ score = l.replace(/^SCORE:\s*/i, ''); return; }
       var p = l.split('|');
       if(p.length >= 3){
@@ -629,10 +800,10 @@
     if(!quiz && !mcq){ toast('Ask for a quiz first'); return; }
     run('mark', '');
   };
-
   $('showans').onclick = function(){
     if(!answersPart) return;
     $('sbody').insertAdjacentHTML('beforeend', '<div class="ansbox">' + md(answersPart) + '</div>');
+    wireCopyButtons();
     answersPart = ''; this.style.display = 'none';
   };
 
@@ -646,19 +817,38 @@
   };
   $('q').addEventListener('keydown', function(e){ if(e.key === 'Enter') $('send').click(); });
 
+  /* ================= paste ================= */
+  $('paste').onclick = function(){
+    if(!navigator.clipboard || !navigator.clipboard.readText){ toast('Paste not available here'); return; }
+    navigator.clipboard.readText().then(function(t){
+      t = (t || '').trim();
+      if(!t){ toast('Clipboard is empty'); return; }
+      pasted = t.slice(0, 6000);
+      $('pastechip').classList.add('on');
+      $('pasteinfo').textContent = pasted.slice(0, 40).replace(/\s+/g, ' ') +
+                                   (pasted.length > 40 ? '...' : '');
+      toast('Pasted text added');
+    }, function(){ toast('Allow paste to use this'); });
+  };
+  $('pasteclear').onclick = function(){
+    pasted = ''; $('pastechip').classList.remove('on');
+  };
+
   /* ================= tools ================= */
   function setTool(t){
     tool = t;
-    $('tPen').className = 'btn sm' + (t === 'pen' ? ' on' : '');
-    $('tHi').className  = 'btn sm' + (t === 'hi' ? ' on' : '');
-    $('tEr').className  = 'btn sm' + (t === 'erase' ? ' on' : '');
+    $('tPen').className   = 'btn sm' + (t === 'pen' ? ' on' : '');
+    $('tHi').className    = 'btn sm' + (t === 'hi' ? ' on' : '');
+    $('tEr').className    = 'btn sm' + (t === 'erase' ? ' on' : '');
+    $('tLasso').className = 'btn sm' + (t === 'lasso' ? ' on' : '');
     var sb = $('rail').querySelectorAll('[data-shape]');
     for(var i=0;i<sb.length;i++)
       sb[i].className = 'btn' + (sb[i].getAttribute('data-shape') === t ? ' on' : '');
   }
-  $('tPen').onclick = function(){ setTool('pen'); };
-  $('tHi').onclick  = function(){ setTool('hi'); };
-  $('tEr').onclick  = function(){ setTool('erase'); };
+  $('tPen').onclick   = function(){ setTool('pen'); };
+  $('tHi').onclick    = function(){ setTool('hi'); };
+  $('tEr').onclick    = function(){ setTool('erase'); };
+  $('tLasso').onclick = function(){ setTool('lasso'); toast('Draw a circle around what you want'); };
   var shapeBtns = $('rail').querySelectorAll('[data-shape]');
   for(var s=0;s<shapeBtns.length;s++){
     (function(b){ b.onclick = function(){ setTool(b.getAttribute('data-shape')); }; })(shapeBtns[s]);
@@ -680,7 +870,7 @@
     (function(b){
       b.onclick = function(){
         color = b.getAttribute('data-c');
-        if(tool === 'erase' || tool === 'hi') setTool('pen');
+        if(tool !== 'pen') setTool('pen');
         for(var m=0;m<sw.length;m++) sw[m].classList.remove('on');
         b.classList.add('on');
       };
@@ -693,42 +883,33 @@
     penOnly = !penOnly;
     this.textContent = penOnly ? 'Pen only' : 'Finger on';
     this.className = 'btn sm ghost' + (penOnly ? '' : ' on');
-    C.style.touchAction = penOnly ? 'pan-y' : 'none';
+    toast(penOnly ? 'Pen draws, finger scrolls' : 'Finger draws too');
   };
   $('newnote').onclick = function(){
     if(strokes.length && !confirm('Start a new blank page?')) return;
     strokes = []; recognized = ''; lastSentCount = -1;
-    quiz = null; mcq = null; sessionLog = [];
+    quiz = null; mcq = null; sessionLog = []; selection = null; pasted = '';
     $('markbtn').style.display = 'none';
+    $('selchip').classList.remove('on'); $('pastechip').classList.remove('on');
     redraw();
     $('readtext').textContent = 'Your handwriting appears here a moment after you stop writing.';
     $('rtag').className = 'tag wait'; $('rtag').textContent = 'READING';
   };
 
   /* ================= export ================= */
-  $('exportBtn').onclick = function(e){
-    e.stopPropagation();
-    $('expmenu').classList.toggle('on');
-  };
+  $('exportBtn').onclick = function(e){ e.stopPropagation(); $('expmenu').classList.toggle('on'); };
   document.addEventListener('click', function(){ $('expmenu').classList.remove('on'); });
   $('expmenu').addEventListener('click', function(e){ e.stopPropagation(); });
-
   var expBtns = $('expmenu').querySelectorAll('[data-exp]');
   for(var x=0;x<expBtns.length;x++){
     (function(b){
-      b.onclick = function(){
-        $('expmenu').classList.remove('on');
-        doExport(b.getAttribute('data-exp'));
-      };
+      b.onclick = function(){ $('expmenu').classList.remove('on'); doExport(b.getAttribute('data-exp')); };
     })(expBtns[x]);
   }
-
-  function noteTitle(){
-    return (recognized.split('\n')[0] || 'My note').slice(0, 60);
-  }
+  function noteTitle(){ return (recognized.split('\n')[0] || 'My note').slice(0, 60); }
 
   function doExport(kind){
-    var o = exportCanvas();
+    var o = exportCanvas(false);
     if(!o){ toast('Write something first'); return; }
     var img = o.toDataURL('image/png');
 
@@ -736,31 +917,29 @@
       var a = document.createElement('a');
       a.href = img; a.download = noteTitle().replace(/[^a-z0-9]+/gi, '-') + '.png';
       document.body.appendChild(a); a.click(); a.remove();
-      toast('Saved as image');
-      return;
+      toast('Saved as image'); return;
     }
 
     var w = window.open('', '_blank');
     if(!w){ toast('Allow pop-ups to export'); return; }
     var slide = (kind === 'slides');
     var css =
-      'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;' +
-      'color:#111;margin:0;padding:0}' +
+      'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#111;margin:0}' +
       'h1{font-size:26px;margin:0 0 6px}h2{font-size:19px;color:#0b6;margin:18px 0 6px}' +
       'h3{font-size:17px;margin:14px 0 4px}p,li{font-size:15px;line-height:1.5}' +
-      'img{max-width:100%;border:1px solid #ddd;border-radius:8px}' +
-      '.sec{padding:28px 34px}' +
-      (slide
-        ? '@page{size:landscape}.sec{page-break-after:always;min-height:92vh;' +
-          'display:flex;flex-direction:column;justify-content:center}'
-        : '@page{margin:16mm}') +
+      'code{background:#f0f2f6;padding:2px 5px;border-radius:4px;font-size:14px}' +
+      '.cmd{background:#0b1020;color:#7CFFB2;padding:10px 12px;border-radius:8px;margin:0 0 8px;' +
+      'font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;overflow-x:auto}' +
+      '.cmd button{display:none}' +
+      'img{max-width:100%;border:1px solid #ddd;border-radius:8px}.sec{padding:28px 34px}' +
+      (slide ? '@page{size:landscape}.sec{page-break-after:always;min-height:92vh;display:flex;' +
+               'flex-direction:column;justify-content:center}' : '@page{margin:16mm}') +
       '.meta{color:#777;font-size:12px;margin-bottom:18px}';
 
-    var h = '<!doctype html><html><head><meta charset="utf-8"><title>' +
-            esc(noteTitle()) + '</title><style>' + css + '</style></head><body>';
-    h += '<div class="sec"><h1>' + esc(noteTitle()) + '</h1>' +
-         '<div class="meta">PenNotes &middot; ' + new Date().toLocaleString() + '</div>' +
-         '<img src="' + img + '"></div>';
+    var h = '<!doctype html><html><head><meta charset="utf-8"><title>' + esc(noteTitle()) +
+            '</title><style>' + css + '</style></head><body>';
+    h += '<div class="sec"><h1>' + esc(noteTitle()) + '</h1><div class="meta">PenNotes &middot; ' +
+         new Date().toLocaleString() + '</div><img src="' + img + '"></div>';
     if(recognized){
       h += '<div class="sec"><h2>What the note says</h2><p>' +
            esc(recognized).replace(/\n/g, '<br>') + '</p></div>';
@@ -769,7 +948,6 @@
       h += '<div class="sec"><h2>' + esc(entry.title) + '</h2>' + md(entry.text) + '</div>';
     });
     h += '</body></html>';
-
     w.document.open(); w.document.write(h); w.document.close();
     setTimeout(function(){ try{ w.focus(); w.print(); }catch(e){} }, 700);
   }
@@ -797,7 +975,7 @@
       (function(b){
         b.onclick = function(){
           var n2 = notes()[Number(b.getAttribute('data-open'))];
-          strokes = n2.s || []; recognized = n2.title || ''; lastSentCount = -1;
+          strokes = n2.s || []; recognized = n2.title || ''; lastSentCount = -1; selection = null;
           redraw(); $('readtext').textContent = recognized; drawer(false); toast('Note opened');
         };
       })(o[a]);
