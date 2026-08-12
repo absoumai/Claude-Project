@@ -107,6 +107,10 @@
   .cmd button{flex:0 0 auto; background:#0d2b1e; border:1px solid var(--green); color:var(--green);
     border-radius:8px; padding:6px 10px; font-size:12px; font-weight:700; cursor:pointer}
   .ansbox{border:1px dashed var(--violet); border-radius:12px; padding:12px; margin-top:14px}
+  .follow{display:none; gap:8px; padding:10px 14px; border-top:1px solid var(--line);
+    overflow-x:auto; flex:0 0 auto}
+  .follow.on{display:flex}
+  .follow .btn{background:#16203c; border-color:var(--violet); color:#dcd2ff}
   .srcs{margin-top:16px; border-top:1px solid var(--line); padding-top:10px}
   .srcs h4{margin:0 0 6px; font-size:12px; letter-spacing:.6px; color:var(--muted)}
   .srcs a{display:block; color:var(--cyan); font-size:13.5px; margin:0 0 5px; text-decoration:none;
@@ -279,6 +283,10 @@
     <button class="btn sm ghost" id="closesheet">Close</button>
   </div>
   <div class="sbody" id="sbody"></div>
+  <div class="follow" id="follow">
+    <button class="btn" id="againbtn">Say it another way</button>
+    <button class="btn" id="realbtn">Real-life example</button>
+  </div>
 </div>
 
 <div class="menu" id="expmenu">
@@ -648,7 +656,15 @@
 
   var LABEL = { explain:'Explain simple', quiz:'Quiz me', mcq:'Multi-choice', summary:'Summary',
                 cards:'Flashcards', solve:'Step by step', fix:'Check my work', ask:'Answer',
-                mark:'Your marks', know:'Know more', terminal:'Terminal' };
+                mark:'Your marks', know:'Know more', terminal:'Terminal',
+                again:'Another way', real:'Real-life example' };
+
+  // Modes that can be followed up with "say it another way" / "real-life example".
+  var FOLLOWABLE = { explain:1, again:1, real:1, know:1, ask:1, summary:1 };
+  var lastExplain = '', explainRound = 0;
+
+  $('againbtn').onclick = function(){ explainRound++; run('again', ''); };
+  $('realbtn').onclick  = function(){ run('real', ''); };
 
   function run(mode, question){
     if(busy) return;
@@ -659,7 +675,13 @@
     $('sbody').innerHTML = '<span class="spin"></span>' +
       (mode === 'terminal' ? 'searching for the right commands...' : 'reading your handwriting...');
 
+    $('follow').classList.remove('on');
+
     var extra = '';
+    if(mode === 'again' || mode === 'real'){
+      extra = 'Attempt number ' + (explainRound + 1) + '. The explanation the student did NOT ' +
+              'understand was:\n' + lastExplain;
+    }
     if(mode === 'mark'){
       if(mcq){
         extra = 'The student was given these multiple choice questions. Correct letters: ' +
@@ -688,6 +710,12 @@
         }
         $('sbody').innerHTML = md(head) + sourcesHTML(res.sources);
         wireCopyButtons();
+        if(FOLLOWABLE[mode]){
+          lastExplain = head;
+          if(mode !== 'again') explainRound = 0;
+          $('follow').classList.add('on');
+          $('sbody').scrollTop = 0;
+        }
         if(mode === 'quiz'){
           quiz = { questions: head.split('\n').filter(function(l){ return /^\s*\d+[.)]/.test(l); }),
                    key: answersPart };

@@ -35,6 +35,18 @@ const PROMPTS: Record<string, string> = {
     "Read the handwritten note. Explain it to a student who hates reading. " +
     "Max 3 short lines per idea: what it is (plain English + an analogy), why it matters, one example. " +
     "No walls of text.",
+  again:
+    "The student read your previous explanation and still did not get it. Explain the SAME material " +
+    "a COMPLETELY different way: a different angle, different words, a different analogy, and more " +
+    "detail wherever the last one was thin. Never reuse the previous analogy, opening line, or " +
+    "structure. If this is attempt 3 or later, slow right down and build it up from the simplest " +
+    "possible starting point. Still short: max 3 lines per idea.",
+  real:
+    "Explain the material in the note using ONE real-life example the student can picture from " +
+    "everyday life — a house, a door and keys, a phone, a shop queue, a football match, post and " +
+    "letters. Structure: tell the story of the example first (3-4 short lines, no jargon), then a " +
+    "line starting 'So in the note:' that maps each part of the story onto the real thing. " +
+    "One example only — do not list several.",
   know:
     "Identify the main tool, term, or concept in the note. Answer with these markdown headings, in order:\n" +
     "## What it is\n## Why it matters\n" +
@@ -153,6 +165,7 @@ Deno.serve(async (req: Request) => {
   }
   if (mode === "ask" && body.question) ask += "\n\nStudent's question: " + body.question;
   if (mode === "mark" && body.extra) ask += "\n\nThe questions and the correct answers:\n" + body.extra;
+  if ((mode === "again" || mode === "real") && body.extra) ask += "\n\n" + body.extra;
   if (body.pasted) {
     ask +=
       "\n\nThe student also pasted this text from somewhere else — treat it as part of the material:\n" +
