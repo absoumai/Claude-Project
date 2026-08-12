@@ -22,21 +22,36 @@
 - `supabase/functions/pennotes/page.ts` — the whole iPad app: Pencil canvas (pressure, palm rejection, finger scrolls / pen draws), pen + highlighter + eraser, undo, saved notes, auto-transcribe 1.6s after you stop writing, bottom action bar, answer sheet, quiz answers hidden behind a button.
 - `supabase/functions/pennotes/index.ts` — the server: serves the page, calls Claude with the image, passcode-gated.
 
+- **API is LIVE and tested 2026-08-12:** `https://bydhtjspcdjdgrpjsotr.supabase.co/functions/v1/pennotes`, passcode `tcd2026`. Verified by curl: wrong passcode → 401, real image → Claude read it and answered correctly. CORS is open so the page can sit on any host.
+- The page runs correctly — screenshotted in Chromium from `web/index.html`.
+- Local git repo initialised. Key is NOT in git.
+
+**The page still needs a host.** Supabase cannot serve it: both Edge Functions *and* Storage force
+`content-type: text/plain` + `content-security-policy: default-src 'none'; sandbox` on any HTML,
+which kills the scripts. That is Supabase anti-phishing policy, not a bug we can fix. Tried and confirmed both.
+
+Pushing to the existing Vercel site also failed — the GitHub PAT baked into
+`~/projects/tcd-vision-project`'s remote is now invalid ("Password authentication is not supported").
+
 **Not done yet:**
-1. Deploy it (needs the 2 secrets set) → get the live URL.
-2. Test on the real iPad with the real Pencil — palm rejection + recognition accuracy are the two things I can't fake from here.
-3. New GitHub account + private repo, push, wire it up.
+1. Host `web/index.html` somewhere real → then it works on the iPad.
+2. Real iPad + Pencil test — palm rejection and how well it reads *his* handwriting.
+3. New GitHub account + private repo + push.
+
+**Hosting options (pick one):**
+- **New GitHub account + Vercel** (his plan anyway) — free, gives a proper URL, auto-deploys on push.
+- **Fix the old PAT** on `tcd-vision-project` → I push `public/pennotes.html` → `tcdvision.academy/pennotes.html`. Already staged and ready; the commit is sitting locally unpushed.
+- Any static host that serves real HTML (Netlify, Cloudflare Pages, GitHub Pages).
 
 ---
 
-## Next session (home laptop, in order)
+## Next session (in order)
 
-1. New GitHub account → create **private** repo `pennotes`.
-2. `git init` here, push.
-3. Set the 2 Supabase secrets: `ANTHROPIC_API_KEY`, `PENNOTES_PASSCODE`.
-4. I deploy the function → you get one URL.
-5. Open on iPad, Add to Home Screen, write a line, see if it reads it.
-6. Tune from there.
+1. Open the URL on the iPad → Share → **Add to Home Screen**.
+2. Write one line, wait ~2s, check the READ strip at the bottom matches.
+3. Tap Explain / Quiz me. Report what feels wrong.
+4. Likely tweaks after the real test: recognition wait time, pen thickness, palm rejection, page length.
+5. New GitHub account → private repo `pennotes` → push.
 
 ---
 

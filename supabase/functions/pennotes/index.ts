@@ -1,11 +1,21 @@
-// PenNotes — handwrite on iPad, Claude reads the page and helps.
-// GET  -> serves the app HTML
+// PenNotes API — the page itself lives in Supabase Storage (web/index.html),
+// because the functions gateway rewrites every response to text/plain and adds
+// "content-security-policy: default-src 'none'; sandbox", so it cannot serve HTML.
+// GET  -> redirect to the app
 // POST -> {mode, image(base64 png), question, text} -> Claude -> {text}
 // Secrets: Supabase env vars ANTHROPIC_API_KEY / PENNOTES_PASSCODE win if set,
 // otherwise ./secrets.ts is used. secrets.ts is gitignored — see secrets.example.ts.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { HTML } from "./page.ts";
 import { API_KEY, PASSCODE } from "./secrets.ts";
+
+const APP_URL =
+  "https://bydhtjspcdjdgrpjsotr.supabase.co/storage/v1/object/public/pennotes/index.html";
+
+const CORS: Record<string, string> = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-headers": "content-type, x-pass, apikey, authorization",
+  "access-control-allow-methods": "POST, GET, OPTIONS",
+};
 
 const MODEL = "claude-sonnet-5";
 
@@ -41,15 +51,14 @@ const PROMPTS: Record<string, string> = {
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json", "cache-control": "no-store" },
+    headers: { "content-type": "application/json", "cache-control": "no-store", ...CORS },
   });
 }
 
 Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
   if (req.method === "GET") {
-    return new Response(HTML, {
-      headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
-    });
+    return new Response(null, { status: 302, headers: { location: APP_URL, ...CORS } });
   }
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 

@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PenNotes">
+<meta name="theme-color" content="#0A0F1E">
+<title>PenNotes</title>
+<style>
+  :root{
+    --navy:#0A0F1E; --panel:#111A31; --line:#22304f;
+    --cyan:#00FFFF; --violet:#8b5cf6; --red:#ff3366;
+    --paper:#fbf9f2; --rule:#dfe7f1; --muted:#93a4c4;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; height:100%; overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--navy); color:#eaf2ff;
+    -webkit-touch-callout:none; -webkit-user-select:none; user-select:none}
+  .app{display:flex; flex-direction:column; height:100%;
+    padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom)}
+
+  .top{display:flex; align-items:center; gap:8px; padding:8px 12px;
+    border-bottom:1px solid var(--line); background:var(--panel); flex:0 0 auto}
+  .brand{font-weight:800; letter-spacing:.4px; font-size:15px; color:var(--cyan); margin-right:4px}
+  .spacer{flex:1}
+  .btn{appearance:none; border:1px solid var(--line); background:#16203c; color:#eaf2ff;
+    border-radius:12px; padding:10px 14px; font-size:15px; font-weight:600; min-height:44px;
+    display:inline-flex; align-items:center; gap:6px; cursor:pointer}
+  .btn:active{transform:scale(.97)}
+  .btn.on{background:var(--cyan); color:#04121b; border-color:var(--cyan)}
+  .btn.ghost{background:transparent}
+  .btn.sm{padding:8px 10px; font-size:14px; min-height:38px}
+  .swatch{width:30px; height:30px; border-radius:50%; border:2px solid #2c3b5e; padding:0}
+  .swatch.on{border-color:#fff; box-shadow:0 0 0 2px var(--cyan)}
+
+  .scroll{flex:1 1 auto; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch;
+    background:#070c17; padding:10px}
+  .padwrap{position:relative; margin:0 auto; max-width:1100px; border-radius:14px; overflow:hidden;
+    box-shadow:0 10px 30px rgba(0,0,0,.45)}
+  canvas#pad{display:block; width:100%; touch-action:pan-y;
+    background-color:var(--paper);
+    background-image:repeating-linear-gradient(to bottom, transparent 0 43px, var(--rule) 43px 44px);}
+  .hint{position:absolute; left:18px; top:14px; color:#9fb0c9; font-size:17px; pointer-events:none}
+
+  .bottom{flex:0 0 auto; background:var(--panel); border-top:1px solid var(--line)}
+  .readrow{display:flex; align-items:flex-start; gap:10px; padding:8px 12px; border-bottom:1px solid var(--line)}
+  .tag{flex:0 0 auto; font-size:11px; font-weight:800; letter-spacing:.8px; color:var(--navy);
+    background:var(--cyan); border-radius:6px; padding:3px 6px; margin-top:2px}
+  .tag.wait{background:#2c3b5e; color:var(--muted)}
+  #readtext{flex:1; font-size:14px; line-height:1.4; color:#cfe0ff; max-height:56px; overflow:auto;
+    white-space:pre-wrap; -webkit-user-select:text; user-select:text}
+  .actions{display:flex; gap:8px; padding:10px 12px; overflow-x:auto}
+  .actions .btn{flex:0 0 auto}
+  .qbox{display:flex; gap:8px; padding:0 12px 10px}
+  .qbox input{flex:1; background:#0d1730; border:1px solid var(--line); color:#eaf2ff;
+    border-radius:12px; padding:12px 14px; font-size:16px; min-height:44px;
+    -webkit-user-select:text; user-select:text}
+
+  .sheet{position:fixed; inset:auto 0 0 0; max-height:82%; background:var(--panel);
+    border-top:2px solid var(--cyan); border-radius:18px 18px 0 0; transform:translateY(110%);
+    transition:transform .25s ease; z-index:40; display:flex; flex-direction:column;
+    padding-bottom:env(safe-area-inset-bottom)}
+  .sheet.open{transform:translateY(0)}
+  .shead{display:flex; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid var(--line)}
+  .shead b{font-size:16px}
+  .sbody{padding:14px 16px 20px; overflow:auto; font-size:17px; line-height:1.55;
+    -webkit-user-select:text; user-select:text}
+  .sbody h3{color:var(--cyan); font-size:16px; margin:16px 0 6px}
+  .sbody p{margin:0 0 10px}
+  .sbody ul{margin:0 0 10px 18px; padding:0}
+  .sbody li{margin:0 0 6px}
+  .sbody strong{color:#fff}
+  .ansbox{border:1px dashed var(--violet); border-radius:12px; padding:12px; margin-top:14px}
+  .spin{width:18px; height:18px; border:3px solid #2c3b5e; border-top-color:var(--cyan);
+    border-radius:50%; animation:sp .8s linear infinite; display:inline-block;
+    vertical-align:middle; margin-right:8px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .err{color:var(--red)}
+
+  .drawer{position:fixed; inset:0 auto 0 0; width:min(85%,340px); background:var(--panel);
+    border-right:1px solid var(--line); transform:translateX(-105%); transition:transform .25s ease;
+    z-index:50; display:flex; flex-direction:column; padding-top:env(safe-area-inset-top)}
+  .drawer.open{transform:translateX(0)}
+  .drawer h4{margin:0; padding:14px; border-bottom:1px solid var(--line); font-size:15px}
+  .notelist{overflow:auto; flex:1}
+  .note{padding:12px 14px; border-bottom:1px solid var(--line); display:flex; gap:10px; align-items:center}
+  .note div{flex:1; min-width:0}
+  .note b{display:block; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .note small{color:var(--muted); font-size:12px}
+  .scrim{position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:45; display:none}
+  .scrim.on{display:block}
+  .toast{position:fixed; left:50%; bottom:120px; transform:translateX(-50%); background:#04121b;
+    color:var(--cyan); border:1px solid var(--cyan); padding:10px 16px; border-radius:12px;
+    font-size:14px; z-index:60; opacity:0; transition:opacity .2s; pointer-events:none}
+  .toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="top">
+    <button class="btn sm ghost" id="menu">&#9776;</button>
+    <span class="brand">PenNotes</span>
+    <button class="btn sm" id="tPen">Pen</button>
+    <button class="btn sm" id="tHi">Mark</button>
+    <button class="btn sm" id="tEr">Erase</button>
+    <button class="swatch" data-c="#0d1b2a" style="background:#0d1b2a"></button>
+    <button class="swatch" data-c="#1f6feb" style="background:#1f6feb"></button>
+    <button class="swatch" data-c="#d92b2b" style="background:#d92b2b"></button>
+    <span class="spacer"></span>
+    <button class="btn sm ghost" id="undo">Undo</button>
+    <button class="btn sm ghost" id="finger">Pen only</button>
+    <button class="btn sm ghost" id="newnote">New</button>
+  </div>
+
+  <div class="scroll" id="scroll">
+    <div class="padwrap">
+      <canvas id="pad"></canvas>
+      <div class="hint" id="hint">Write here with your Apple Pencil...</div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="readrow">
+      <span class="tag wait" id="rtag">READING</span>
+      <div id="readtext">Your handwriting appears here a moment after you stop writing.</div>
+    </div>
+    <div class="actions">
+      <button class="btn" data-mode="explain">Explain simple</button>
+      <button class="btn" data-mode="quiz">Quiz me</button>
+      <button class="btn" data-mode="summary">Summarise</button>
+      <button class="btn" data-mode="cards">Flashcards</button>
+      <button class="btn" data-mode="solve">Solve step by step</button>
+      <button class="btn" data-mode="fix">Check my work</button>
+    </div>
+    <div class="qbox">
+      <input id="q" placeholder="Or ask anything about this note..." enterkeyhint="send">
+      <button class="btn on" id="send">Ask</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="sheet">
+  <div class="shead">
+    <b id="stitle">Claude</b>
+    <span class="spacer"></span>
+    <button class="btn sm ghost" id="showans" style="display:none">Show answers</button>
+    <button class="btn sm ghost" id="closesheet">Close</button>
+  </div>
+  <div class="sbody" id="sbody"></div>
+</div>
+
+<div class="drawer" id="drawer">
+  <h4>My notes</h4>
+  <div class="notelist" id="notelist"></div>
+  <div style="padding:12px; display:flex; gap:8px">
+    <button class="btn sm" id="savenote">Save this note</button>
+    <button class="btn sm ghost" id="closedrawer">Close</button>
+  </div>
+</div>
+<div class="scrim" id="scrim"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var NL = String.fromCharCode(10);
+  var $ = function(id){ return document.getElementById(id); };
+  var C = $('pad'), X = C.getContext('2d');
+  var DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+  var PAGE_H = 1500;
+
+  var strokes = [], cur = null;
+  var tool = 'pen', color = '#0d1b2a', penOnly = true;
+  var recognized = '', lastSentCount = -1, readTimer = null, busy = false;
+  var answersPart = '';
+
+  /* ---------- canvas ---------- */
+  function fit(){
+    var w = C.parentElement.clientWidth;
+    C.style.height = PAGE_H + 'px';
+    C.width = Math.round(w * DPR);
+    C.height = Math.round(PAGE_H * DPR);
+    X.setTransform(DPR, 0, 0, DPR, 0, 0);
+    redraw();
+  }
+  function drawStroke(s){
+    var p = s.pts; if(!p.length) return;
+    X.save();
+    X.lineCap = 'round'; X.lineJoin = 'round';
+    if(s.tool === 'erase'){ X.globalCompositeOperation = 'destination-out'; X.strokeStyle = 'rgba(0,0,0,1)'; }
+    else if(s.tool === 'hi'){ X.globalCompositeOperation = 'multiply'; X.strokeStyle = 'rgba(255,214,0,.42)'; }
+    else { X.globalCompositeOperation = 'source-over'; X.strokeStyle = s.color; }
+    if(p.length === 1){
+      X.beginPath(); X.arc(p[0].x, p[0].y, s.w * (p[0].p || .5), 0, 6.3);
+      X.fillStyle = X.strokeStyle; X.fill(); X.restore(); return;
+    }
+    for(var i = 1; i < p.length; i++){
+      var a = p[i-1], b = p[i];
+      var pr = (a.p + b.p) / 2 || .5;
+      X.lineWidth = (s.tool === 'erase') ? s.w : Math.max(.7, s.w * (.45 + pr * 1.25));
+      X.beginPath(); X.moveTo(a.x, a.y); X.lineTo(b.x, b.y); X.stroke();
+    }
+    X.restore();
+  }
+  function redraw(){
+    X.setTransform(1,0,0,1,0,0); X.clearRect(0,0,C.width,C.height);
+    X.setTransform(DPR,0,0,DPR,0,0);
+    for(var i=0;i<strokes.length;i++) drawStroke(strokes[i]);
+    $('hint').style.display = strokes.length ? 'none' : 'block';
+  }
+  function widthFor(){ return tool === 'erase' ? 26 : (tool === 'hi' ? 20 : 2.6); }
+  function pos(e){
+    var r = C.getBoundingClientRect();
+    return { x:(e.clientX - r.left), y:(e.clientY - r.top),
+             p:(e.pressure && e.pressure > 0 ? e.pressure : .5) };
+  }
+  function accepts(e){
+    if(e.pointerType === 'pen' || e.pointerType === 'mouse') return true;
+    return !penOnly;
+  }
+  C.addEventListener('pointerdown', function(e){
+    if(!accepts(e)) return;
+    e.preventDefault(); C.setPointerCapture(e.pointerId);
+    cur = { pts:[pos(e)], color:color, w:widthFor(), tool:tool };
+    strokes.push(cur); drawStroke(cur);
+  });
+  C.addEventListener('pointermove', function(e){
+    if(!cur || !accepts(e)) return;
+    e.preventDefault();
+    var pts = (e.getCoalescedEvents ? e.getCoalescedEvents() : [e]);
+    for(var i=0;i<pts.length;i++) cur.pts.push(pos(pts[i]));
+    redraw();
+  });
+  function endStroke(){ if(!cur) return; cur = null; scheduleRead(); }
+  C.addEventListener('pointerup', endStroke);
+  C.addEventListener('pointercancel', endStroke);
+  C.addEventListener('pointerleave', endStroke);
+  window.addEventListener('resize', fit);
+
+  /* ---------- export only the written area ---------- */
+  function exportPNG(){
+    if(!strokes.length) return null;
+    var minx=1e9, miny=1e9, maxx=-1e9, maxy=-1e9, seen=false;
+    for(var i=0;i<strokes.length;i++){
+      if(strokes[i].tool === 'erase') continue;
+      var p = strokes[i].pts;
+      for(var j=0;j<p.length;j++){
+        seen = true;
+        if(p[j].x<minx) minx=p[j].x;
+        if(p[j].x>maxx) maxx=p[j].x;
+        if(p[j].y<miny) miny=p[j].y;
+        if(p[j].y>maxy) maxy=p[j].y;
+      }
+    }
+    if(!seen) return null;
+    var pad = 26, cssW = C.width / DPR;
+    minx = Math.max(0, minx - pad); miny = Math.max(0, miny - pad);
+    maxx = Math.min(cssW, maxx + pad); maxy = Math.min(PAGE_H, maxy + pad);
+    var w = Math.max(8, maxx - minx), h = Math.max(8, maxy - miny);
+    var scale = Math.min(2, Math.max(1, 1400 / w));
+    var o = document.createElement('canvas');
+    o.width = Math.round(w * scale); o.height = Math.round(h * scale);
+    var ox = o.getContext('2d');
+    ox.fillStyle = '#ffffff'; ox.fillRect(0, 0, o.width, o.height);
+    ox.drawImage(C, minx*DPR, miny*DPR, w*DPR, h*DPR, 0, 0, o.width, o.height);
+    return o.toDataURL('image/png').split(',')[1];
+  }
+
+  /* ---------- talk to Claude ---------- */
+  function pass(){
+    var p = localStorage.getItem('pn_pass');
+    if(!p){
+      p = window.prompt('Passcode (one time on this iPad):') || '';
+      if(p) localStorage.setItem('pn_pass', p);
+    }
+    return p;
+  }
+  var API = 'https://bydhtjspcdjdgrpjsotr.supabase.co/functions/v1/pennotes';
+  function call(mode, question, cb){
+    var img = exportPNG();
+    if(!img){ cb({ error:'Write something on the page first.' }); return; }
+    fetch(API, {
+      method:'POST',
+      headers:{ 'content-type':'application/json', 'x-pass':pass() },
+      body:JSON.stringify({ mode:mode, image:img, question:question||'', text:recognized })
+    }).then(function(r){
+      return r.json().catch(function(){ return { error:'Server error (HTTP ' + r.status + ')' }; });
+    }).then(cb).catch(function(e){ cb({ error:'Network: ' + e.message }); });
+  }
+
+  function scheduleRead(){ clearTimeout(readTimer); readTimer = setTimeout(doRead, 1600); }
+  function doRead(){
+    var count = 0;
+    for(var i=0;i<strokes.length;i++) count += strokes[i].pts.length;
+    if(count === lastSentCount || !strokes.length) return;
+    lastSentCount = count;
+    $('rtag').className = 'tag wait'; $('rtag').textContent = 'READING';
+    call('read', '', function(res){
+      if(res.error){
+        $('rtag').className = 'tag wait'; $('rtag').textContent = 'ERROR';
+        $('readtext').innerHTML = '<span class="err">' + esc(res.error) + '</span>';
+        return;
+      }
+      recognized = (res.text || '').trim();
+      $('rtag').className = 'tag'; $('rtag').textContent = 'READ';
+      $('readtext').textContent = recognized || '(nothing readable yet)';
+    });
+  }
+
+  function esc(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function bold(t){
+    var parts = t.split('**'), o = '';
+    for(var i=0;i<parts.length;i++) o += (i % 2 ? '<strong>' + parts[i] + '</strong>' : parts[i]);
+    return o;
+  }
+  function md(s){
+    var lines = esc(s).split(NL), out = '', inList = false, i, t;
+    for(i=0;i<lines.length;i++){
+      t = bold(lines[i].trim());
+      if(t === ''){ if(inList){ out += '</ul>'; inList = false; } continue; }
+      if(t.indexOf('### ') === 0 || t.indexOf('## ') === 0 || t.indexOf('# ') === 0){
+        if(inList){ out += '</ul>'; inList = false; }
+        out += '<h3>' + t.substring(t.indexOf(' ') + 1) + '</h3>';
+      } else if(t.indexOf('- ') === 0 || t.indexOf('* ') === 0){
+        if(!inList){ out += '<ul>'; inList = true; }
+        out += '<li>' + t.substring(2) + '</li>';
+      } else {
+        if(inList){ out += '</ul>'; inList = false; }
+        out += '<p>' + t + '</p>';
+      }
+    }
+    if(inList) out += '</ul>';
+    return out;
+  }
+
+  function openSheet(title){ $('stitle').textContent = title; $('sheet').classList.add('open'); }
+  $('closesheet').onclick = function(){ $('sheet').classList.remove('open'); };
+
+  var LABEL = { explain:'Explain simple', quiz:'Quiz me', summary:'Summary',
+                cards:'Flashcards', solve:'Step by step', fix:'Check my work', ask:'Answer' };
+
+  function run(mode, question){
+    if(busy) return;
+    busy = true; answersPart = ''; $('showans').style.display = 'none';
+    openSheet(LABEL[mode] || 'Claude');
+    $('sbody').innerHTML = '<span class="spin"></span>reading your handwriting...';
+    call(mode, question, function(res){
+      busy = false;
+      if(res.error){ $('sbody').innerHTML = '<p class="err">' + esc(res.error) + '</p>'; return; }
+      var t = res.text || '', head = t, cut = t.indexOf('--ANSWERS--');
+      if(cut > -1){
+        head = t.substring(0, cut);
+        answersPart = t.substring(cut + 11);
+        $('showans').style.display = 'inline-flex';
+        $('showans').textContent = 'Show answers';
+      }
+      $('sbody').innerHTML = md(head);
+    });
+  }
+  $('showans').onclick = function(){
+    if(!answersPart) return;
+    $('sbody').insertAdjacentHTML('beforeend', '<div class="ansbox">' + md(answersPart) + '</div>');
+    answersPart = ''; this.style.display = 'none';
+  };
+
+  var acts = document.querySelectorAll('[data-mode]');
+  for(var i=0;i<acts.length;i++){
+    (function(b){ b.onclick = function(){ run(b.getAttribute('data-mode'), ''); }; })(acts[i]);
+  }
+  $('send').onclick = function(){
+    var v = $('q').value.trim(); if(!v) return;
+    $('q').blur(); run('ask', v);
+  };
+  $('q').addEventListener('keydown', function(e){ if(e.key === 'Enter') $('send').click(); });
+
+  /* ---------- tools ---------- */
+  function setTool(t){
+    tool = t;
+    $('tPen').className = 'btn sm' + (t === 'pen' ? ' on' : '');
+    $('tHi').className  = 'btn sm' + (t === 'hi' ? ' on' : '');
+    $('tEr').className  = 'btn sm' + (t === 'erase' ? ' on' : '');
+  }
+  $('tPen').onclick = function(){ setTool('pen'); };
+  $('tHi').onclick  = function(){ setTool('hi'); };
+  $('tEr').onclick  = function(){ setTool('erase'); };
+  setTool('pen');
+
+  var sw = document.querySelectorAll('.swatch');
+  for(var k=0;k<sw.length;k++){
+    (function(b){
+      b.onclick = function(){
+        color = b.getAttribute('data-c'); setTool('pen');
+        for(var m=0;m<sw.length;m++) sw[m].classList.remove('on');
+        b.classList.add('on');
+      };
+    })(sw[k]);
+  }
+  sw[0].classList.add('on');
+
+  $('undo').onclick = function(){ strokes.pop(); redraw(); };
+  $('finger').onclick = function(){
+    penOnly = !penOnly;
+    this.textContent = penOnly ? 'Pen only' : 'Finger on';
+    this.className = 'btn sm ghost' + (penOnly ? '' : ' on');
+    C.style.touchAction = penOnly ? 'pan-y' : 'none';
+  };
+  $('newnote').onclick = function(){
+    if(strokes.length && !confirm('Start a new blank page?')) return;
+    strokes = []; recognized = ''; lastSentCount = -1; redraw();
+    $('readtext').textContent = 'Your handwriting appears here a moment after you stop writing.';
+    $('rtag').className = 'tag wait'; $('rtag').textContent = 'READING';
+  };
+
+  /* ---------- saved notes ---------- */
+  function notes(){
+    try { return JSON.parse(localStorage.getItem('pn_notes') || '[]'); } catch(e){ return []; }
+  }
+  function saveNotes(n){ localStorage.setItem('pn_notes', JSON.stringify(n)); }
+  function renderNotes(){
+    var n = notes(), h = '', i;
+    if(!n.length) h = '<div class="note"><div><small>No saved notes yet.</small></div></div>';
+    for(i=0;i<n.length;i++){
+      h += '<div class="note"><div><b>' + esc(n[i].title || 'Untitled') + '</b>' +
+           '<small>' + new Date(n[i].t).toLocaleString() + '</small></div>' +
+           '<button class="btn sm" data-open="' + i + '">Open</button>' +
+           '<button class="btn sm ghost" data-del="' + i + '">&#215;</button></div>';
+    }
+    $('notelist').innerHTML = h;
+    var o = $('notelist').querySelectorAll('[data-open]');
+    for(var a=0;a<o.length;a++){
+      (function(b){
+        b.onclick = function(){
+          var n2 = notes()[Number(b.getAttribute('data-open'))];
+          strokes = n2.s || []; recognized = n2.title || ''; lastSentCount = -1;
+          redraw(); $('readtext').textContent = recognized; drawer(false); toast('Note opened');
+        };
+      })(o[a]);
+    }
+    var d = $('notelist').querySelectorAll('[data-del]');
+    for(var c=0;c<d.length;c++){
+      (function(b){
+        b.onclick = function(){
+          var n2 = notes(); n2.splice(Number(b.getAttribute('data-del')), 1);
+          saveNotes(n2); renderNotes();
+        };
+      })(d[c]);
+    }
+  }
+  $('savenote').onclick = function(){
+    if(!strokes.length){ toast('Nothing to save'); return; }
+    var n = notes();
+    n.unshift({ t:Date.now(), title:(recognized.split(NL)[0] || 'Untitled').slice(0,60), s:strokes });
+    saveNotes(n.slice(0,40)); renderNotes(); toast('Saved');
+  };
+  function drawer(open){
+    $('drawer').classList.toggle('open', open);
+    $('scrim').classList.toggle('on', open);
+    if(open) renderNotes();
+  }
+  $('menu').onclick = function(){ drawer(true); };
+  $('closedrawer').onclick = function(){ drawer(false); };
+  $('scrim').onclick = function(){ drawer(false); };
+
+  var toastT;
+  function toast(m){
+    var t = $('toast'); t.textContent = m; t.classList.add('on');
+    clearTimeout(toastT); toastT = setTimeout(function(){ t.classList.remove('on'); }, 1600);
+  }
+
+  document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+  fit();
+})();
+</script>
+</body>
+</html>
